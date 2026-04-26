@@ -3,4 +3,5 @@ project(OS_system01 C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_library(OS_system01 STATIC library.c)
+
+add_executable(OS_system01 Main.c library.c)
