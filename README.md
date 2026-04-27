@@ -7,3 +7,14 @@
 | - | Graph Structure | `graph.c`, `graph.h` | Build graph, implement create/add/free functions, manage memory |
 | Shahd Julani | Dijkstra Algorithm | `dijkstra.c`, `dijkstra.h` | Implement shortest path, return path + weight, handle special cases |
 # OS_system01
+
+
+Milestone 2
+
+| Student Name | Responsibility | Files | Tasks |Project Description|
+|-------------|---------------|-------|------|-----------------------|
+| Shahid Hassan Haj | Main & Output |-----------| -------------------------------- |
+| Miral Agha | File Reading | -------- | -------------------------------- |
+| - | Graph Structure | ------------------ | -------------------------------- |
+| Shahd Julani | Dijkstra Algorithm |-------|--------------------------------|
+# OS_system01
