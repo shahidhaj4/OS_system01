@@ -10,4 +10,6 @@ add_executable(OS_system01
 )
 
 add_executable(OS_system01 Main.c library.c
+        file_reader.c
+        file_reader.h
 )
