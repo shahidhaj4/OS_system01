@@ -1,6 +1,9 @@
 #include "library.h"
 #include <stdio.h>
 #include <limits.h>
+#include "graph.h"
+#include "file_reader.h"
+#include "dijkstra.h"
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
