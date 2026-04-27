@@ -13,8 +13,8 @@ Milestone 2
 
 | Student Name | Responsibility | Files | Tasks |Project Description|
 |-------------|---------------|-------|------|-----------|---------|
-| Shahid Hassan Haj |   |             |  |
-| Miral Agha |     |   |     |
-| - |               |              |           |
-| Shahd Julani |       |          |           |
+| Shahid Hassan Haj | -----------  |        ------------     | --------- |
+| Miral Agha |  ----------------------   |  ---------- |   ----------  |
+| - |            -----------------   |      -------------------        |          --------- |
+| Shahd Julani |   ----------------    |      --------    |   ------        |
  
