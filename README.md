@@ -9,7 +9,7 @@
 # OS_system01
 
 
-Milestone 2
+## Task Distribution – Milestone 2
 | Student Name | Responsibility | Files | Tasks |Project Description|
 |-------------|---------------|-------|------|-----------------------|
 | Shahid Hassan Haj | Main & Output | `main.c` | Integrate all modules, print path and total weight, handle edge cases, ensure compilation |
@@ -20,7 +20,7 @@ Milestone 2
 
 
 
-Milestone 3
+## Task Distribution – Milestone 3
 | Student Name | Responsibility | Files | Tasks |Project Description|
 |-------------|---------------|-------|------|-----------------------|
 | Shahid Hassan Haj | Main & Output | `main.c` | Integrate all modules, print path and total weight, handle edge cases, ensure compilation |
