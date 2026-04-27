@@ -12,9 +12,9 @@
 Milestone 2
 
 | Student Name | Responsibility | Files | Tasks |Project Description|
-|-------------|---------------|-------|------|-----------------------|
-| Shahid Hassan Haj | Main & Output |-----------| -------------------------------- |
-| Miral Agha | File Reading | -------- | -------------------------------- |
-| - | Graph Structure | ------------------ | -------------------------------- |
-| Shahd Julani | Dijkstra Algorithm |-------|--------------------------------|
-# OS_system01
+|-------------|---------------|-------|------|-----------|---------|
+| Shahid Hassan Haj |  ||  |
+| Miral Agha |  |  |  |
+| - | |  |  |
+| Shahd Julani |  |||
+
