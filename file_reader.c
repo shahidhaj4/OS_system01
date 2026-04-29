@@ -106,6 +106,6 @@ GraphData* read_file(const char* filename) {
  */
 void free_graph_data(GraphData* data) {
     if (!data) return;
-    free(data->edges); // Safe even if NULL
+    free(data->edges);
     free(data);
 }

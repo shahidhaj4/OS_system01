@@ -11,7 +11,7 @@
 typedef struct {
     int src;    // Source node index
     int dst;    // Destination node index
-    int weight; // Edge weight (must be non-negative)
+    int weight; // Edge weight ( must be non-negative )
 } EdgeInput;
 
 /**
