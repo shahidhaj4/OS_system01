@@ -11,34 +11,37 @@ GraphData* read_file(const char* filename) {
     // Allocate memory for the main GraphData structure
     GraphData* data = (GraphData*)malloc(sizeof(GraphData));
     if (!data) {
-        printf("Memory allocation failed for GraphData struct\n");
+        printf("Error: Memory allocation failed for GraphData struct\n");
         fclose(f);
         return NULL;
     }
 
     // 1. Read number of nodes (N) and number of edges (M) from the first line
     if (fscanf(f, "%d %d", &data->n, &data->m) != 2) {
-        printf("Invalid file format: N or M missing\n");
+        printf("Error: Invalid file format (N or M missing)\n");
         fclose(f);
         free(data);
         return NULL;
     }
 
-    // Basic validation for graph size
-    if (data->n <= 0 || data->m < 0) {
-        printf("Invalid graph size\n");
+    // Milestone 2 Requirement: Max 15 nodes for GUI clarity
+    if (data->n <= 0 || data->n > 15 || data->m < 0) {
+        printf("Error: Validation failed. N must be between 1 and 15 nodes.\n");
         fclose(f);
         free(data);
         return NULL;
     }
 
-    // 2. Allocate memory for the edges array based on M
-    data->edges = (EdgeInput*)malloc(data->m * sizeof(EdgeInput));
-    if (data->m > 0 && !data->edges) {
-        printf("Memory allocation failed for edges array\n");
-        fclose(f);
-        free(data);
-        return NULL;
+    //  FIX: Safe allocation for edges
+    data->edges = NULL;
+    if (data->m > 0) {
+        data->edges = (EdgeInput*)malloc(data->m * sizeof(EdgeInput));
+        if (!data->edges) {
+            printf("Error: Memory allocation failed for edges array\n");
+            fclose(f);
+            free(data);
+            return NULL;
+        }
     }
 
     // 3. Loop to read all M edges (src, dst, weight)
@@ -47,49 +50,49 @@ GraphData* read_file(const char* filename) {
                    &data->edges[i].src, 
                    &data->edges[i].dst, 
                    &data->edges[i].weight) != 3) {
-            printf("Invalid edge format at line %d\n", i + 2);
+            printf("Error: Invalid edge format at line %d\n", i + 2);
+            fclose(f);
             free(data->edges);
             free(data);
-            fclose(f);
             return NULL;
         }
 
         // Project requirement: Reject negative weights
         if (data->edges[i].weight < 0) {
-            printf("Invalid input (negative weight)\n");
+            printf("Error: Negative weight found at line %d\n", i + 2);
+            fclose(f);
             free(data->edges);
             free(data);
-            fclose(f);
             return NULL;
         }
 
-        // Ensure node indices are within valid range [0, N-1]
+        // Bound Checking: Ensure node indices are within range [0, N-1]
         if (data->edges[i].src < 0 || data->edges[i].src >= data->n ||
             data->edges[i].dst < 0 || data->edges[i].dst >= data->n) {
-            printf("Invalid node index in edges list\n");
+            printf("Error: Node index out of bounds at line %d\n", i + 2);
+            fclose(f);
             free(data->edges);
             free(data);
-            fclose(f);
             return NULL;
         }
     }
 
     // 4. Read the start and end nodes for Dijkstra (the last line)
     if (fscanf(f, "%d %d", &data->start, &data->end) != 2) {
-        printf("Invalid query format at the end of file\n");
+        printf("Error: Missing source/destination query at end of file\n");
+        fclose(f);
         free(data->edges);
         free(data);
-        fclose(f);
         return NULL;
     }
 
     // Validate query nodes
     if (data->start < 0 || data->start >= data->n ||
         data->end < 0 || data->end >= data->n) {
-        printf("Invalid query nodes\n");
+        printf("Error: Query nodes out of bounds\n");
+        fclose(f);
         free(data->edges);
         free(data);
-        fclose(f);
         return NULL;
     }
 
@@ -98,12 +101,11 @@ GraphData* read_file(const char* filename) {
     return data;
 }
 
-// Function to safely free all allocated memory to prevent memory leaks
+/**
+ * free_graph_data(): Safely releases all allocated memory.
+ */
 void free_graph_data(GraphData* data) {
-    if (data) {
-        if (data->edges) {
-            free(data->edges);
-        }
-        free(data);
-    }
+    if (!data) return;
+    free(data->edges); // Safe even if NULL
+    free(data);
 }
