@@ -35,3 +35,4 @@ int main(int argc, char *argv[]) {
 
     freeGraph(g);
     return 0;
+}
