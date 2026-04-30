@@ -23,5 +23,9 @@ Graph* create_graph(int n, int m);
 void add_edge(Graph *g, int src, int dest, int weight);
 Graph* readGraph(char *filename, int *src, int *dst);
 void freeGraph(Graph *g);
+int get_num_nodes(Graph *g);
+void print_neighbors(Graph *g, int node);
+int get_edge_weight(Graph *g, int src, int dest);
+void traverse_all_edges(Graph *g);
 
 #endif //OS_SYSTEM01_GRAPH_H

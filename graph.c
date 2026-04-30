@@ -71,3 +71,45 @@ void freeGraph(Graph *g) {
     }
     free(g);
 }
+
+int get_num_nodes(Graph *g) {
+    if (g == NULL) return 0;
+    return g->n;
+}
+
+void print_neighbors(Graph *g, int node) {
+    if (g == NULL || node < 0 || node >= g->n) return;
+
+    Edge *e = g->adj[node];
+    printf("Neighbors of node %d: ", node);
+    while (e != NULL) {
+        printf("-> %d (weight: %d) ", e->dest, e->weight);
+        e = e->next;
+    }
+    printf("\n");
+}
+
+int get_edge_weight(Graph *g, int src, int dest) {
+    if (g == NULL || src < 0 || src >= g->n) return -1;
+
+    Edge *e = g->adj[src];
+    while (e != NULL) {
+        if (e->dest == dest) {
+            return e->weight;
+        }
+        e = e->next;
+    }
+    return -1;
+}
+
+void traverse_all_edges(Graph *g) {
+    if (g == NULL) return;
+
+    for (int i = 0; i < g->n; i++) {
+        Edge *e = g->adj[i];
+        while (e != NULL) {
+            printf("Edge from %d to %d with weight %d\n", i, e->dest, e->weight);
+            e = e->next;
+        }
+    }
+}
