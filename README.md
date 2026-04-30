@@ -1,11 +1,78 @@
-## Task Distribution – Milestone 1
-
-| Student Name | Responsibility | Files | Tasks |Project Description|
-|-------------|---------------|-------|------|-----------------------|
-| Shahid Hassan Haj | Main & Output | `main.c` | Integrate all modules, print path and total weight, handle edge cases, ensure compilation |Implemented the main program in main.c, which integrates all system components. The program receives the input file as a command-line argument and uses readGraph() to load the graph along with the source and destination nodes. It handles edge cases, such as when the source and destination are the same, by returning a distance of 0. The dijkstra() function is then executed to compute the shortest paths, storing results in the dist[] and prev[] arrays. If a valid path exists, printPath() is used to display the shortest path followed by its total cost; otherwise, an appropriate message is shown. Finally, freeGraph() is called to release all allocated memory and ensure proper resource management.|
-| Miral Agha | File Reading | `file_reader.c`, `file_reader.h` | Read input file, parse nodes/edges, validate input, pass data forward |Implemented the file processing and input validation module in file_reader.c and file_reader.h. The read_file() function is responsible for parsing the input text file and extracting the graph structure, including the number of nodes (N) and edges (M). To support efficient data transfer to other modules, it dynamically allocates a structure to store raw edge data. A key part of this implementation is the validation layer, which ensures node indices are within valid bounds and rejects negative weights according to project requirements. Additionally, the free_graph_data() function handles proper memory cleanup, helping prevent memory leaks and maintain system stability.|
-| Ghada Bader | Graph Structure | `graph.c`, `graph.h` | Build graph, implement create/add/free functions, manage memory |Implemented a Directed Graph in graph.c and graph.h using adjacency lists. The create_graph() function initializes the structure, while add_edge() dynamically creates and links weighted edges to each node. The readGraph() function handles file input to populate the graph from a text file, including the source and destination nodes. Proper memory management is ensured through freeGraph(), which deallocates all linked lists and the graph structure to prevent memory leaks.|
-| Shahd Julani | Dijkstra Algorithm | `dijkstra.c`, `dijkstra.h` | Implement shortest path, return path + weight, handle special cases |Implemented Dijkstra’s algorithm in dijkstra.c and dijkstra.h. The dijkstra() function takes a graph and a source node, then computes the shortest distances to all other nodes using three arrays: dist[] for distances, prev[] for tracking paths, and visited[] for finalized nodes. It repeatedly selects the closest unvisited node, marks it as visited, and updates its neighbors when a shorter path is found. The printPath() function then uses prev[] to reconstruct and display the full path (e.g., 0 → 2 → 1 → 3 → 4 → 5).|
 # OS_system01
 
+## 📌 Project Description
+This project simulates a train network using graph algorithms, where each node represents a station and edges represent connections between stations.
+It finds the shortest path between stations using Dijkstra’s algorithm and visualizes the network using a GUI (Raylib).
 
+---
+
+## 🚀 How to Run
+
+### Milestone 1 (Console)
+make milestone1  
+./dijkstra graph.txt
+
+### Milestone 2 (GUI)
+make milestone2  
+./sim graph.txt
+
+---
+
+## 🧹 Clean Build Files
+make clean
+
+---
+
+## 📂 Input Format
+Example (graph.txt):
+
+0 3  
+4 5  
+0 1 10  
+1 2 5  
+2 3 7  
+0 2 15  
+1 3 12
+
+- First line: source and destination
+- Second line: number of nodes (N) and edges (M)
+- Next lines: edges (src dst weight)
+
+---
+
+## ⚙️ Milestones Overview
+
+### Milestone 1
+- Dijkstra algorithm
+- Console output (path + total weight)
+- Input validation
+
+### Milestone 2
+- GUI using Raylib
+- Highlight shortest path
+- Display nodes and edges
+
+---
+
+## 👥 Task Distribution – Milestone 1 & 2
+
+### Shahid Hassan Haj – Main & Output
+- Integrated modules, handled edge cases, printed results
+- Designed the GUI layout
+
+### Miral Agha – File Reader
+- Parsed input file, validated data, managed memory
+
+### Ghada Bader – Graph Structure
+- Built adjacency list, managed edges and memory
+
+### Shahd Julani – Dijkstra Algorithm
+- Implemented shortest path logic
+- Contributed to drawing (visualization)
+
+---
+
+## 📝 Notes
+- Uses adjacency list
+- Memory handled properly
+- Max nodes: 15
