@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.28.3)
 project(OS_system01 C)
-
 set(CMAKE_C_STANDARD 11)
 
 add_library(mylib
@@ -8,12 +7,12 @@ add_library(mylib
         file_reader.c
         dijkstra.c
         graph.c
-        "Dijkstra draw .c"
-        "Dijkstra draw.h"
+        Dijkstra_draw.c
 )
 
 add_executable(OS_system01
         Main.c
         )
 
-target_link_libraries(OS_system01 mylib)
+
+target_link_libraries(OS_system01 mylib raylib m X11 pthread dl rt)

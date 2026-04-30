@@ -4,7 +4,7 @@
 #include "dijkstra.h"
 #include "graph.h"
 #include "raylib.h"
-
+#include <math.h>
 #define MAX_NODES 100
 
 static void drawArrow(float x1, float y1, float x2, float y2,
@@ -36,7 +36,7 @@ void drawDijkstraResult(Graph *g, int *prev, int *dist,
             for (Edge *e = g->adj[u]; e != NULL; e = e->next) {
                 int v = e->dest;
                 if (onPath[v] && prev[v] == u)
-                    drawArrow(x[u], y[u], x[v], y[v], YELLOW, 4.0f);
+                    drawArrow(x[u], y[u], x[v], y[v], RED, 6.0f);
             }
         }
         for (int i = 0; i < g->n; i++) {
@@ -51,24 +51,33 @@ void drawDijkstraResult(Graph *g, int *prev, int *dist,
     }
 
     Color infoBg = {0, 0, 0, 180};
-    DrawRectangle(10, 10, 280, 70, infoBg);
-    DrawRectangleLines(10, 10, 280, 70, GRAY);
+
+    int boxX = 10;
+    int boxY = 80;
+    int boxW = 280;
+    int boxH = 70;
+
+    DrawRectangle(boxX, boxY, boxW, boxH, infoBg);
+    DrawRectangleLines(boxX, boxY, boxW, boxH, GRAY);
 
     if (src == dst) {
         char line1[64];
         snprintf(line1, sizeof(line1), "Path: %d  (source = destination)", src);
-        DrawText(line1, 18, 20, 16, WHITE);
-        DrawText("Total weight: 0", 18, 44, 16, WHITE);
+        DrawText(line1, boxX + 8, boxY + 10, 16, WHITE);
+        DrawText("Total weight: 0", boxX + 8, boxY + 34, 16, WHITE);
     } else if (!pathExists || dist[dst] == INT_MAX) {
-        DrawText("No path found", 18, 20, 18, RED);
+        DrawText("No path found", boxX + 8, boxY + 10, 18, RED);
+
         char query[64];
         snprintf(query, sizeof(query), "Query: %d -> %d", src, dst);
-        DrawText(query, 18, 46, 16, LIGHTGRAY);
+        DrawText(query, boxX + 8, boxY + 36, 16, LIGHTGRAY);
     } else {
         char query[64], weight[64];
-        snprintf(query,  sizeof(query),  "Shortest path: %d -> %d", src, dst);
+
+        snprintf(query, sizeof(query), "Shortest path: %d -> %d", src, dst);
         snprintf(weight, sizeof(weight), "Total weight: %d", dist[dst]);
-        DrawText(query,  18, 20, 16, WHITE);
-        DrawText(weight, 18, 44, 18, YELLOW);
+
+        DrawText(query, boxX + 8, boxY + 10, 16, WHITE);
+        DrawText(weight, boxX + 8, boxY + 34, 18, YELLOW);
     }
 }
