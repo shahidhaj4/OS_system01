@@ -8,6 +8,8 @@ add_library(mylib
         file_reader.c
         dijkstra.c
         graph.c
+        "Dijkstra draw .c"
+        "Dijkstra draw.h"
 )
 
 add_executable(OS_system01
