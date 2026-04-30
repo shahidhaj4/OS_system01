@@ -4,8 +4,8 @@
 #include "dijkstra.h"
 #include "graph.h"
 #include "raylib.h"
-
-#define MAX_NODES 100
+#include <math.h>
+#define MAX_NODES 15
 
 
 void dijkstra(Graph *g, int src, int *dist, int *prev) {
@@ -53,26 +53,18 @@ void printPath(int *prev, int src, int node) {
     printf(" -> %d", node);
 }
 
-/* ─── Path Mask ───────────────────────────────────────────────── */
 
-/*
- * Helper: recursively marks all nodes on the path from src to dst.
- */
 static void markPath(int *prev, int src, int node, int *onPath) {
     onPath[node] = 1;
     if (node == src) return;
     markPath(prev, src, prev[node], onPath);
 }
 
-/*
- * Builds a boolean array `onPath` of size n.
- * onPath[i] = 1 if node i lies on the shortest path from src to dst.
- * Returns 1 if a path exists, 0 if unreachable (dst == INT_MAX or prev broken).
- */
+
 int buildPathMask(int *prev, int src, int dst, int n, int *onPath) {
     memset(onPath, 0, n * sizeof(int));
 
-    // Unreachable: prev[dst] is -1 and dst != src
+
     if (dst != src && prev[dst] == -1)
         return 0;
 
@@ -80,9 +72,9 @@ int buildPathMask(int *prev, int src, int dst, int n, int *onPath) {
     return 1;
 }
 
-/* ─── GUI:   */
 
-/
+
+// ─── GUI: ───
 #define PATH_EDGE_COLOR    YELLOW       /* highlighted edge color          */
 #define PATH_EDGE_THICK    4.0f         /* highlighted edge line thickness */
 #define PATH_NODE_COLOR    ORANGE       /* highlighted node fill color     */

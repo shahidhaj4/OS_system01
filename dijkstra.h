@@ -14,3 +14,4 @@ void drawDijkstraResult(Graph *g, int *prev, int *dist,
 
 #endif /* DIJKSTRA_H */
 
+

@@ -12,6 +12,6 @@ add_library(mylib
 
 add_executable(OS_system01
         Main.c
-        graph.c)
+        )
 
 target_link_libraries(OS_system01 mylib)
