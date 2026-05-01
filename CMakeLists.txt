@@ -8,6 +8,8 @@ add_library(mylib
         dijkstra.c
         graph.c
         Dijkstra_draw.c
+        drawing.c
+        drawing.h
 )
 
 add_executable(OS_system01
