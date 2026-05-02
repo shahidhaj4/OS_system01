@@ -56,3 +56,38 @@ int buildPathMask(int *prev, int src, int dst, int n, int *onPath) {
     markPath(prev, src, dst, onPath);
     return 1;
 }
+
+// Build path from prev[] (reversed: dst -> src)
+int extractPath(int *prev, int src, int dst, int *path, int *pathLen) {
+    if (dst != src && prev[dst] == -1)
+        return 0;
+
+    int current = dst;
+    int len = 0;
+
+    while (current != -1) {
+        path[len++] = current;
+        if (current == src) break;
+        current = prev[current];
+    }
+
+    *pathLen = len;
+    return 1;
+}
+
+// Reverse path to correct order (src -> dst)
+void reversePath(int *path, int pathLen) {
+    for (int i = 0; i < pathLen / 2; i++) {
+        int tmp = path[i];
+        path[i] = path[pathLen - i - 1];
+        path[pathLen - i - 1] = tmp;
+    }
+}
+
+// Get next node in path
+int getNextNodeInPath(int *path, int pathLen, int currentIndex) {
+    if (currentIndex < 0 || currentIndex >= pathLen - 1)
+        return -1;
+
+    return path[currentIndex + 1];
+}
