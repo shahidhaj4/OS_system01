@@ -16,6 +16,13 @@ make milestone1
 make milestone2  
 ./sim graph.txt
 
+### Milestone 3 – Graph Animation
+- Added real-time animation of an entity moving along the shortest path computed by Dijkstra’s algorithm.
+- Movement follows edge weights: each edge is divided into W steps, each step takes 300ms.
+- The entity pauses for 1 second at intermediate nodes (excluding source and destination).
+- The graph remains visible during the animation.
+- Play/Stop control implemented using the SPACE key.
+- A message is displayed upon reaching the destination.
 ---
 
 ## 🧹 Clean Build Files
