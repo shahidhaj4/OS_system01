@@ -16,14 +16,9 @@ make milestone1
 make milestone2  
 ./sim graph.txt
 
-### Milestone 3 – Graph Animation
-- Added real-time animation of an entity moving along the shortest path computed by Dijkstra’s algorithm.
-- Movement follows edge weights: each edge is divided into W steps, each step takes 300ms.
-- The entity pauses for 1 second at intermediate nodes (excluding source and destination).
-- The graph remains visible during the animation.
-- Play/Stop control implemented using the SPACE key.
-- A message is displayed upon reaching the destination.
----
+### Milestone 3 (Animation)
+make milestone3  
+./sim graph.txt
 
 ## 🧹 Clean Build Files
 make clean
@@ -59,25 +54,38 @@ Example (graph.txt):
 - Highlight shortest path
 - Display nodes and edges
 
----
+### Milestone 3
+- Animated movement along the shortest path
+- Step-based motion according to edge weights (300ms per step)
+- 1-second delay at intermediate nodes
+- Play/Stop control using SPACE key
+- Arrival message at destination
 
 ## 👥 Task Distribution – Milestone 1 & 2
 
 ### Shahid Hassan Haj – Main & Output
 - Integrated modules, handled edge cases, printed results
 - Designed the GUI layout
+- Implemented animation control logic (Play/Stop)
+- Integrated animation with Dijkstra results and GUI
+- Managed entity movement across the path
 
-### Miral Agha – File Reader
-- Parsed input file, validated data, managed memory
+#### Miral Agha – Animation Logic
+- Implemented movement logic (step-based animation)
+- Handled 300ms step timing
+- Implemented 1-second delay at nodes
 
-### Ghada Bader – Graph Structure
-- Built adjacency list, managed edges and memory
+#### Ghada Bader – Path Handling
+- Extracted shortest path from Dijkstra output
+- Converted path into sequence of nodes/edges
+- Managed transitions between nodes
 
-### Shahd Julani – Dijkstra Algorithm
-- Implemented shortest path logic
-- Contributed to drawing (visualization)
+#### Shahd Julani – Drawing & Visualization
+- Implemented moving entity rendering
+- Updated visuals during animation
+- Displayed arrival message at destination
 
----
+
 
 ## 📝 Notes
 - Uses adjacency list
