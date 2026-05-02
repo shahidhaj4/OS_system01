@@ -3,9 +3,13 @@
 #include <stdio.h>
 
 
-#define TRAIN_COLOR      (Color){220, 50,  50,  255}
-#define TRAIN_BORDER     (Color){120, 10,  10,  255}   #define TRAIN_LABEL      WHITE
-#define ARRIVAL_BG       (Color){0,   0,   0,   200}   #define ARRIVAL_BORDER   (Color){255, 215, 0,   255}   #define ARRIVAL_TITLE    (Color){255, 215, 0,   255}   #define ARRIVAL_TEXT     WHITE
+#define TRAIN_COLOR      (Color){220, 50, 50, 255}
+#define TRAIN_BORDER     (Color){120, 10, 10, 255}
+#define TRAIN_LABEL      WHITE
+#define ARRIVAL_BG       (Color){0, 0, 0, 200}
+#define ARRIVAL_BORDER   (Color){255, 215, 0, 255}
+#define ARRIVAL_TITLE    (Color){255, 215, 0, 255}
+#define ARRIVAL_TEXT     WHITE
 
 void drawEntity(float px, float py) {
         DrawCircle((int)px, (int)py, NODE_R + 8,

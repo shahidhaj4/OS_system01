@@ -7,30 +7,17 @@
 #include "raylib.h"
 #include <math.h>
 #include "Dijkstra_draw.h"
+#include "drawing.h"
 
 #define SCREEN_W 900
 #define SCREEN_H 700
 #define NODE_R 22
+
 const char *stationNames[MAX_NODES] = {
-    "Tel Aviv",
-    "Haifa",
-    "Jerusalem",
-    "Beer Sheva",
-    "Nazareth",
-    "Eilat",
-    "Netanya",
-    "Ashdod",
-    "Tiberias",
-    "Acre",
-    "Rishon LeZion",
-    "Herzliya",
-    "Petah Tikva",
-    "Ramla",
-    "Lod"
+    "Tel Aviv", "Haifa", "Jerusalem", "Beer Sheva", "Nazareth",
+    "Eilat", "Netanya", "Ashdod", "Tiberias", "Acre",
+    "Rishon LeZion", "Herzliya", "Petah Tikva", "Ramla", "Lod"
 };
-void drawDijkstraResult(Graph *g, int *prev, int *dist,
-                        int src, int dst,
-                        float *x, float *y, float radius);
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -46,6 +33,14 @@ int main(int argc, char *argv[]) {
     int prev[MAX_NODES];
 
     dijkstra(g, src, dist, prev);
+
+    int path[MAX_NODES];
+    int pathLen = 0;
+    int hasPath = extractPath(prev, src, dst, path, &pathLen);
+
+    if (hasPath) {
+        reversePath(path, pathLen);
+    }
 
     if (src == dst) {
         printf("%d\n0\n", src);
@@ -65,23 +60,77 @@ int main(int argc, char *argv[]) {
         y[i] = SCREEN_H / 2.0f + sinf(angle) * 230.0f;
     }
 
-    InitWindow(SCREEN_W, SCREEN_H, "Milestone 2 - Graph GUI");
+    InitWindow(SCREEN_W, SCREEN_H, "Milestone 3 - Animation");
     SetTargetFPS(60);
 
+    int currentIndex = 0;
+    float px = hasPath ? x[path[0]] : 0;
+    float py = hasPath ? y[path[0]] : 0;
+    int arrived = 0;
+    int isPlaying = 0;
+    float timer = 0.0f;
+    int step = 0;
+    float waitTimer = 0.0f;
+    int waiting = 0;
+
     while (!WindowShouldClose()) {
+
+        if (IsKeyPressed(KEY_SPACE)) {
+            isPlaying = !isPlaying;
+        }
+
+        if (hasPath && isPlaying && !arrived) {
+            float dt = GetFrameTime();
+
+            if (waiting) {
+                waitTimer += dt;
+                if (waitTimer >= 1.0f) {
+                    waiting = 0;
+                    waitTimer = 0.0f;
+                }
+            } else if (currentIndex < pathLen - 1) {
+                timer += dt;
+
+                int u = path[currentIndex];
+                int v = path[currentIndex + 1];
+
+                int weight = get_edge_weight(g, u, v);
+                int steps = (weight > 0) ? weight : 1;
+
+                if (timer >= 0.3f) {
+                    timer = 0.0f;
+                    step++;
+
+                    float t = (float)step / steps;
+                    px = x[u] + (x[v] - x[u]) * t;
+                    py = y[u] + (y[v] - y[u]) * t;
+
+                    if (step >= steps) {
+                        step = 0;
+                        currentIndex++;
+
+                        if (currentIndex >= pathLen - 1) {
+                            arrived = 1;
+                        } else {
+                            waiting = 1;
+                        }
+                    }
+                }
+            }
+        }
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
         DrawText("Directed Weighted Graph", 20, 20, 24, BLACK);
+        DrawText("SPACE = Play / Stop", 20, 55, 20, DARKGRAY);
 
         for (int u = 0; u < g->n; u++) {
             for (Edge *e = g->adj[u]; e != NULL; e = e->next) {
                 int v = e->dest;
 
-                // رسم الخط
                 DrawLineEx((Vector2){x[u], y[u]}, (Vector2){x[v], y[v]}, 4, BLACK);
 
-                // رسم السهم (arrow)
                 float dx = x[v] - x[u];
                 float dy = y[v] - y[u];
                 float len = sqrtf(dx * dx + dy * dy);
@@ -120,28 +169,20 @@ int main(int argc, char *argv[]) {
             int textX = (int)x[i];
             int textY = (int)y[i];
 
-
             if (x[i] > centerX + 20) {
                 textX = (int)(x[i] + NODE_R + 5);
                 textY = (int)(y[i] - 8);
-            }
-
-            else if (x[i] < centerX - 20) {
+            } else if (x[i] < centerX - 20) {
                 textX = (int)(x[i] - textW - NODE_R - 5);
                 textY = (int)(y[i] - 8);
-            }
-
-            else if (y[i] < centerY) {
+            } else if (y[i] < centerY) {
                 textX = (int)(x[i] - textW / 2);
                 textY = (int)(y[i] - NODE_R - 20);
-            }
-
-            else {
+            } else {
                 textX = (int)(x[i] - textW / 2);
                 textY = (int)(y[i] + NODE_R + 10);
             }
 
-           // DrawText(label, textX, textY, 18, BLACK);
             int padding = 4;
             int textH = 18;
 
@@ -157,17 +198,20 @@ int main(int argc, char *argv[]) {
                                textH + padding * 2,
                                GRAY);
 
-            DrawText(label, textX + 1, textY + 1, 18, DARKGRAY); // shadow
+            DrawText(label, textX + 1, textY + 1, 18, DARKGRAY);
             DrawText(label, textX, textY, 18, BLACK);
         }
 
         drawDijkstraResult(g, prev, dist, src, dst, x, y, (float)NODE_R);
 
+        if (hasPath) {
+            drawAnimationFrame(px, py, dst, arrived, dist[dst], stationNames);
+        }
+
         EndDrawing();
     }
 
     CloseWindow();
-
     freeGraph(g);
     return 0;
 }
