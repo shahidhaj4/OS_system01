@@ -38,7 +38,7 @@ static void handle_sigterm(int sig) {
 }
 
 /**
- * Milestone 4: Spawns a dedicated child process for each traveler.
+ * Milestone 4 Requirement: Spawns a dedicated child process for each traveler.
  */
 void spawn_traveler_processes(Traveler* travelers, int num_travelers) {
     for (int i = 0; i < num_travelers; i++) {
@@ -71,7 +71,7 @@ void spawn_traveler_processes(Traveler* travelers, int num_travelers) {
 
 /**
  * Progresses the animation state of a single traveler frame-by-frame (Non-blocking).
- * Integrated directly with the coordinate layout structure for visual rendering.
+ * Tracks the structural state and dynamic interpolation vectors for rendering.
  */
 void update_traveler_animation(Traveler* traveler, const GraphData* data) {
     if (!traveler || !traveler->is_active)
@@ -105,12 +105,6 @@ void update_traveler_animation(Traveler* traveler, const GraphData* data) {
 
     int weight = get_edge_weight(data, u, v);
 
-    // Fetch coordinate mapping from shared data structure for visual tracking
-    float src_x = (float)data->nodes[u].x;
-    float src_y = (float)data->nodes[u].y;
-    float dst_x = (float)data->nodes[v].x;
-    float dst_y = (float)data->nodes[v].y;
-
     traveler->time_counter += 16;
 
     // Each procedural step jump takes exactly 300ms
@@ -131,13 +125,13 @@ void update_traveler_animation(Traveler* traveler, const GraphData* data) {
         }
     }
 
-    /* ----------- VISUAL RENDERING INTEGRATION: LINEAR INTERPOLATION ----------- */
+    /* ----------- VISUAL RENDERING INTEGRATION: PROGRESS CALCULATION ----------- */
     // Calculate progress fraction 't' between current edge step and total weight
     float t = (float)traveler->current_jump_step / (float)weight;
 
-    // Smoothly interpolate current visual frame coordinates for the GUI layout
-    traveler->current_x = src_x + t * (dst_x - src_x);
-    traveler->current_y = src_y + t * (dst_y - src_y);
+    // Store interpolation factor into coordinate hooks for the GUI thread to evaluate dynamically
+    traveler->current_x = t; // We store 't' as the progress indicator along the current path edge
+    traveler->current_y = 0.0f;
 }
 
 /* ---------------- PROCESS CLEANUP & REAPING ---------------- */

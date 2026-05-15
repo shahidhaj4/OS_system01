@@ -47,4 +47,4 @@ void update_traveler_animation(Traveler* traveler, const GraphData* data);
  */
 void wait_for_all_children(Traveler* travelers, int num_travelers);
 
-#endif // ANIMATION_H
+#endif //ANIMATION_H
