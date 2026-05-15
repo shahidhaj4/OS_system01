@@ -1,14 +1,12 @@
 #include "file_reader.h"
 
 GraphData* read_file(const char* filename) {
-    // Attempt to open the file for reading
     FILE* f = fopen(filename, "r");
     if (!f) {
         printf("File error: Could not open file %s\n", filename);
         return NULL;
     }
 
-    // Allocate memory for the main GraphData structure
     GraphData* data = (GraphData*)malloc(sizeof(GraphData));
     if (!data) {
         printf("Error: Memory allocation failed for GraphData struct\n");
@@ -78,22 +76,50 @@ GraphData* read_file(const char* filename) {
     }
 
     // 4. Read the start and end nodes for Dijkstra (the last line)
-    if (fscanf(f, "%d %d", &data->start, &data->end) != 2) {
-        printf("Error: Missing source/destination query at end of file\n");
+    if (fscanf(f, "%d", &data->traveler_count) != 1) {
+        printf("Error: Missing traveler count\n");
         fclose(f);
         free(data->edges);
         free(data);
         return NULL;
     }
 
-    // Validate query nodes
-    if (data->start < 0 || data->start >= data->n ||
-        data->end < 0 || data->end >= data->n) {
-        printf("Error: Query nodes out of bounds\n");
+    if (data->traveler_count <= 0) {
+        printf("Error: Invalid traveler count\n");
         fclose(f);
         free(data->edges);
         free(data);
         return NULL;
+    }
+
+    data->travelers = malloc(data->traveler_count * sizeof(TravelerInput));
+    if (!data->travelers) {
+        printf("Error: Memory allocation failed for travelers\n");
+        fclose(f);
+        free(data->edges);
+        free(data);
+        return NULL;
+    }
+
+    for (int i = 0; i < data->traveler_count; i++) {
+        if (fscanf(f, "%d %d", &data->travelers[i].src, &data->travelers[i].dst) != 2) {
+            printf("Error: Invalid traveler format\n");
+            fclose(f);
+            free(data->travelers);
+            free(data->edges);
+            free(data);
+            return NULL;
+        }
+
+        if (data->travelers[i].src < 0 || data->travelers[i].src >= data->n ||
+            data->travelers[i].dst < 0 || data->travelers[i].dst >= data->n) {
+            printf("Error: Traveler node out of bounds\n");
+            fclose(f);
+            free(data->travelers);
+            free(data->edges);
+            free(data);
+            return NULL;
+            }
     }
 
     // Close the file and return the populated structure
@@ -101,11 +127,11 @@ GraphData* read_file(const char* filename) {
     return data;
 }
 
-/**
- * free_graph_data(): Safely releases all allocated memory.
- */
+
 void free_graph_data(GraphData* data) {
     if (!data) return;
     free(data->edges);
+    free(data->travelers);
     free(data);
+
 }

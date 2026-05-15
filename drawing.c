@@ -52,7 +52,6 @@ void drawArrivalMessage(int travelerIndex, int dst, int totalWeight,
 
     int panelY = 250 + travelerIndex * 80;
     Color panelBorder = TRAVELER_COLORS[travelerIndex % MAX_TRAVELERS];
-
     DrawRectangle(150, panelY, 600, 70, ARRIVAL_BG);
     DrawRectangleLines(150, panelY, 600, 70, panelBorder);
 
