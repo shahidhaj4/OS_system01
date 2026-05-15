@@ -3,62 +3,85 @@
 #include <stdio.h>
 
 
-#define TRAIN_COLOR      (Color){220, 50, 50, 255}
-#define TRAIN_BORDER     (Color){120, 10, 10, 255}
-#define TRAIN_LABEL      WHITE
-#define ARRIVAL_BG       (Color){0, 0, 0, 200}
-#define ARRIVAL_BORDER   (Color){255, 215, 0, 255}
-#define ARRIVAL_TITLE    (Color){255, 215, 0, 255}
-#define ARRIVAL_TEXT     WHITE
+const Color TRAVELER_COLORS[MAX_TRAVELERS] = {
+    {220, 50,  50,  255},   /* 0 - red       */
+    {50,  150, 220, 255},   /* 1 - blue      */
+    {50,  200, 80,  255},   /* 2 - green     */
+    {255, 165, 0,   255},   /* 3 - orange    */
+    {180, 50,  220, 255},   /* 4 - purple    */
+    {0,   200, 200, 255},   /* 5 - cyan      */
+    {255, 220, 0,   255},   /* 6 - yellow    */
+    {255, 100, 180, 255},   /* 7 - pink      */
+    {100, 180, 100, 255},   /* 8 - light green */
+    {180, 120, 60,  255},   /* 9 - brown     */
+};
 
-void drawEntity(float px, float py) {
-        DrawCircle((int)px, (int)py, NODE_R + 8,
-               (Color){220, 50, 50, 80});
+#define ARRIVAL_BG      (Color){0,   0,   0,   200}
+#define ARRIVAL_BORDER  (Color){255, 215, 0,   255}
+#define ARRIVAL_TITLE   (Color){255, 215, 0,   255}
+#define ARRIVAL_TEXT    WHITE
 
-        DrawCircle((int)px, (int)py, NODE_R, TRAIN_COLOR);
-    DrawCircleLines((int)px, (int)py, NODE_R, TRAIN_BORDER);
+void drawEntity(float px, float py, Color color, int travelerIndex) {
 
-        int textW = MeasureText("T", 20);
-    DrawText("T",
+    Color glow = {color.r, color.g, color.b, 80};
+    DrawCircle((int)px, (int)py, NODE_R + 8, glow);
+
+    /* Main body */
+    DrawCircle((int)px, (int)py, NODE_R, color);
+
+        Color border = {
+        (unsigned char)(color.r / 2),
+        (unsigned char)(color.g / 2),
+        (unsigned char)(color.b / 2),
+        255
+    };
+    DrawCircleLines((int)px, (int)py, NODE_R, border);
+
+
+    char label[4];
+    snprintf(label, sizeof(label), "%d", travelerIndex);
+    int textW = MeasureText(label, 20);
+    DrawText(label,
              (int)(px - textW / 2.0f),
              (int)(py - 10),
-             20, TRAIN_LABEL);
+             20, WHITE);
 }
 
-void drawArrivalMessage(int dst, int totalWeight, const char *stationNames[]) {
-       DrawRectangle(200, 270, 500, 160, ARRIVAL_BG);
-    DrawRectangleLines(200, 270, 500, 160, ARRIVAL_BORDER);
+void drawArrivalMessage(int travelerIndex, int dst, int totalWeight,
+                        const char *stationNames[]) {
 
+    int panelY = 250 + travelerIndex * 80;
+    Color panelBorder = TRAVELER_COLORS[travelerIndex % MAX_TRAVELERS];
 
-    const char *title = "Arrived at Destination!";
-    int titleW = MeasureText(title, 28);
-    DrawText(title, 450 - titleW / 2, 290, 28, ARRIVAL_TITLE);
+    DrawRectangle(150, panelY, 600, 70, ARRIVAL_BG);
+    DrawRectangleLines(150, panelY, 600, 70, panelBorder);
 
-        char station[128];
+      char line1[128];
     if (stationNames && stationNames[dst])
-        snprintf(station, sizeof(station), "Station: %s (%d)", stationNames[dst], dst);
+        snprintf(line1, sizeof(line1), "Traveler %d arrived at: %s (%d)",
+                 travelerIndex, stationNames[dst], dst);
     else
-        snprintf(station, sizeof(station), "Node: %d", dst);
+        snprintf(line1, sizeof(line1), "Traveler %d arrived at node %d",
+                 travelerIndex, dst);
 
-    int stW = MeasureText(station, 22);
-    DrawText(station, 450 - stW / 2, 332, 22, ARRIVAL_TEXT);
+    int l1W = MeasureText(line1, 20);
+    DrawText(line1, 450 - l1W / 2, panelY + 10, 20, ARRIVAL_TITLE);
 
-       char weightStr[64];
-    snprintf(weightStr, sizeof(weightStr), "Total journey weight: %d", totalWeight);
-    int wW = MeasureText(weightStr, 20);
-    DrawText(weightStr, 450 - wW / 2, 366, 20, ARRIVAL_TEXT);
-
-       const char *hint = "Press ESC to exit";
-    int hW = MeasureText(hint, 16);
-    DrawText(hint, 450 - hW / 2, 398, 16, GRAY);
+        char line2[64];
+    snprintf(line2, sizeof(line2), "Total journey weight: %d", totalWeight);
+    int l2W = MeasureText(line2, 18);
+    DrawText(line2, 450 - l2W / 2, panelY + 38, 18, ARRIVAL_TEXT);
 }
 
-void drawAnimationFrame(float px, float py, int dst, int arrived,
-                        int totalWeight, const char *stationNames[]) {
-    if (arrived) {
-               drawEntity(px, py);
-                drawArrivalMessage(dst, totalWeight, stationNames);
-    } else {
-                drawEntity(px, py);
+void drawTraveler(int travelerIndex, float px, float py,
+                  int dst, int arrived, int totalWeight,
+                  const char *stationNames[]) {
+
+    Color color = TRAVELER_COLORS[travelerIndex % MAX_TRAVELERS];
+
+        drawEntity(px, py, color, travelerIndex);
+
+       if (arrived) {
+        drawArrivalMessage(travelerIndex, dst, totalWeight, stationNames);
     }
 }
