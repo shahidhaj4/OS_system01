@@ -4,11 +4,7 @@
 #include <sys/types.h>
 #include "file_reader.h"
 
-/**
- * Structure to hold and track each individual traveler's state concurrently.
- * This enables the parent process to animate multiple passengers simultaneously
- * inside the main visual GUI loop without blocking execution.
- */
+
 typedef struct {
     pid_t child_pid;          // Process ID of the child process representing this traveler
     int src_node;             // Starting node ID
@@ -25,26 +21,18 @@ typedef struct {
     unsigned char color[4];   // RGBA color array to fulfill the unique color requirement
 } Traveler;
 
-/* ---------------- FUNCTION PROTOTYPES ---------------- */
 
-/**
- * Retrieves the weight of a directed edge between two given nodes.
- */
-int get_edge_weight(const GraphData* data, int src, int dst);
 
-/**
- * Milestone 4 Requirement: Spawns a dedicated child process for each traveler using fork().
- */
+
+int get_edge_weight_from_data(const GraphData* data, int src, int dst);
+
+
 void spawn_traveler_processes(Traveler* travelers, int num_travelers);
 
-/**
- * Progresses the animation state of a single traveler frame-by-frame (Non-blocking).
- */
+
 void update_traveler_animation(Traveler* traveler, const GraphData* data);
 
-/**
- * Parent process cleanup routine: reaps all signaled child processes using waitpid().
- */
+
 void wait_for_all_children(Traveler* travelers, int num_travelers);
 
 #endif //ANIMATION_H
