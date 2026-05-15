@@ -7,21 +7,21 @@
 /**
  * Structure to hold and track each individual traveler's state concurrently.
  * This enables the parent process to animate multiple passengers simultaneously
- * inside the main Raylib GUI loop without blocking execution.
+ * inside the main visual GUI loop without blocking execution.
  */
 typedef struct {
     pid_t child_pid;          // Process ID of the child process representing this traveler
     int src_node;             // Starting node ID
     int dest_node;            // Final destination node ID
-    int* path;                // Array holding the calculated Dijkstra path (from Ghada)
+    int* path;                // Array holding the calculated shortest path structure
     int path_size;            // Total number of nodes in the path array
     int current_path_index;   // Current index within the path array
     int current_jump_step;    // Tracks the step count along the current edge (up to Weight W)
     int time_counter;         // Millisecond accumulator used for non-blocking frame timing
     int is_waiting_at_node;   // Flag: 1 if currently experiencing the 1-second node delay, 0 otherwise
     int is_active;            // Flag: 1 if traveler is still moving, 0 if arrived/terminated
-    float current_x;          // Visual X-coordinate hook for Shahd's rendering logic
-    float current_y;          // Visual Y-coordinate hook for Shahd's rendering logic
+    float current_x;          // Visual X-coordinate hook for the rendering logic
+    float current_y;          // Visual Y-coordinate hook for the rendering logic
     unsigned char color[4];   // RGBA color array to fulfill the unique color requirement
 } Traveler;
 

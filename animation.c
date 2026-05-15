@@ -11,10 +11,6 @@
 
 /**
  * Retrieves the weight of a directed edge between two given nodes.
- * @param data Pointer to the shared graph structure.
- * @param src Source node ID.
- * @param dst Destination node ID.
- * @return The weight W representing the number of animation jumps, defaults to 1.
  */
 int get_edge_weight(const GraphData* data, int src, int dst) {
     if (!data) return 1;
@@ -33,23 +29,18 @@ int get_edge_weight(const GraphData* data, int src, int dst) {
 
 /**
  * Signal handler for child processes to intercept SIGTERM.
- * Ensures clean exit reporting to stdout upon termination.
  */
 static void handle_sigterm(int sig) {
-    (void)sig; // Silence unused parameter compiler warning
+    (void)sig;
     printf("[%d] terminated\n", getpid());
     fflush(stdout);
-    _exit(0); // Safe exit within async-signal context
+    _exit(0);
 }
 
 /**
- * Milestone 4 Requirement: Spawns a dedicated child process for each traveler.
- * Child processes print their status and yield CPU execution efficiently.
- * @param travelers Array holding the states of all passengers.
- * @param num_travelers Total number of active travelers.
+ * Milestone 4: Spawns a dedicated child process for each traveler.
  */
 void spawn_traveler_processes(Traveler* travelers, int num_travelers) {
-
     for (int i = 0; i < num_travelers; i++) {
         pid_t pid = fork();
 
@@ -59,22 +50,17 @@ void spawn_traveler_processes(Traveler* travelers, int num_travelers) {
         }
         else if (pid == 0) {
             /* ----------- CHILD PROCESS BEHAVIOR ----------- */
-            // Register signal handler to catch termination signal from parent
             signal(SIGTERM, handle_sigterm);
 
-            // Milestone 4 Requirement: Print PID started instantly
             printf("[%d] started\n", getpid());
             fflush(stdout);
 
-            /* Efficient passive waiting: pause() puts the child process to sleep
-               completely without spinning or consuming CPU cycles until a signal arrives. */
             while (1) {
-                pause();
+                pause(); // Passive waiting
             }
         }
         else {
             /* ----------- PARENT PROCESS BEHAVIOR ----------- */
-            // Retain the child's PID to manage lifecycle and signaling
             travelers[i].child_pid = pid;
             travelers[i].is_active = 1;
         }
@@ -85,21 +71,16 @@ void spawn_traveler_processes(Traveler* travelers, int num_travelers) {
 
 /**
  * Progresses the animation state of a single traveler frame-by-frame (Non-blocking).
- * Designed to handle multiple passengers concurrently inside the Raylib main GUI loop.
- * @param traveler Pointer to the specific passenger tracking structure.
- * @param data Pointer to the loaded graph map layout.
+ * Integrated directly with the coordinate layout structure for visual rendering.
  */
 void update_traveler_animation(Traveler* traveler, const GraphData* data) {
     if (!traveler || !traveler->is_active)
         return;
 
     /* ---------------- ARRIVAL & SIGNALING CHECK ---------------- */
-    // Triggered when the traveler has processed all edges in their calculated path
     if (traveler->current_path_index >= traveler->path_size - 1) {
         traveler->is_active = 0;
 
-        /* Milestone 4 Requirement: Parent intercepts terminal arrival,
-           sending a SIGTERM signal to kill the passive child process. */
         if (traveler->child_pid > 0) {
             printf("[PARENT] Traveler finished -> killing PID %d\n", traveler->child_pid);
             kill(traveler->child_pid, SIGTERM);
@@ -108,15 +89,14 @@ void update_traveler_animation(Traveler* traveler, const GraphData* data) {
     }
 
     /* ---------------- INTERMEDIATE NODE WAIT ---------------- */
-    // Milestone 3/4 Requirement: 1-second full stop halt at intermediate junction nodes
     if (traveler->is_waiting_at_node) {
-        traveler->time_counter += 16; // Simulate frame step duration (~60 FPS -> 16.67ms)
+        traveler->time_counter += 16; // ~60 FPS update frame
 
-        if (traveler->time_counter >= 1000) { // 1000ms threshold reached
+        if (traveler->time_counter >= 1000) { // 1 second total wait
             traveler->is_waiting_at_node = 0;
             traveler->time_counter = 0;
         }
-        return; // Halt movement progression until waiting interval expires
+        return;
     }
 
     /* ---------------- EDGE MOVEMENT CONCURRENCY ---------------- */
@@ -125,20 +105,23 @@ void update_traveler_animation(Traveler* traveler, const GraphData* data) {
 
     int weight = get_edge_weight(data, u, v);
 
-    traveler->time_counter += 16; // Accumulate time intervals between frames
+    // Fetch coordinate mapping from shared data structure for visual tracking
+    float src_x = (float)data->nodes[u].x;
+    float src_y = (float)data->nodes[u].y;
+    float dst_x = (float)data->nodes[v].x;
+    float dst_y = (float)data->nodes[v].y;
 
-    // Milestone 3/4 Requirement: Each procedural step jump takes exactly 300ms
+    traveler->time_counter += 16;
+
+    // Each procedural step jump takes exactly 300ms
     if (traveler->time_counter >= 300) {
         traveler->time_counter = 0;
         traveler->current_jump_step++;
 
-        /* TODO: Coordinate interpolation hook for Shahd's visual rendering logic.
-           Example: float t = (float)traveler->current_jump_step / weight; */
-
         // Check if traveler has accomplished all W jumps along the current edge
         if (traveler->current_jump_step >= weight) {
             traveler->current_jump_step = 0;
-            traveler->current_path_index++; // Move to next node layout index
+            traveler->current_path_index++;
 
             /* Evaluate next location status: Trigger wait period if not the final destination */
             if (traveler->current_path_index < traveler->path_size - 1) {
@@ -147,19 +130,24 @@ void update_traveler_animation(Traveler* traveler, const GraphData* data) {
             }
         }
     }
+
+    /* ----------- VISUAL RENDERING INTEGRATION: LINEAR INTERPOLATION ----------- */
+    // Calculate progress fraction 't' between current edge step and total weight
+    float t = (float)traveler->current_jump_step / (float)weight;
+
+    // Smoothly interpolate current visual frame coordinates for the GUI layout
+    traveler->current_x = src_x + t * (dst_x - src_x);
+    traveler->current_y = src_y + t * (dst_y - src_y);
 }
 
 /* ---------------- PROCESS CLEANUP & REAPING ---------------- */
 
 /**
  * Reaps all terminated child processes to ensure systematic memory reclamation.
- * @param travelers Array holding the passenger metrics and process handles.
- * @param num_travelers Number of tracked traveler objects.
  */
 void wait_for_all_children(Traveler* travelers, int num_travelers) {
     for (int i = 0; i < num_travelers; i++) {
         if (travelers[i].child_pid > 0) {
-            // Synchronously wait for child process state change to clear zombie entries
             waitpid(travelers[i].child_pid, NULL, 0);
         }
     }
