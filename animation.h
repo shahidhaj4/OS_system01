@@ -4,35 +4,91 @@
 #include <sys/types.h>
 #include "file_reader.h"
 
+/* ---------------- IPC MESSAGE STRUCTURE ---------------- */
 
 typedef struct {
-    pid_t child_pid;          // Process ID of the child process representing this traveler
-    int src_node;             // Starting node ID
-    int dest_node;            // Final destination node ID
-    int* path;                // Array holding the calculated shortest path structure
-    int path_size;            // Total number of nodes in the path array
-    int current_path_index;   // Current index within the path array
-    int current_jump_step;    // Tracks the step count along the current edge (up to Weight W)
-    int time_counter;         // Millisecond accumulator used for non-blocking frame timing
-    int is_waiting_at_node;   // Flag: 1 if currently experiencing the 1-second node delay, 0 otherwise
-    int is_active;            // Flag: 1 if traveler is still moving, 0 if arrived/terminated
-    float current_x;          // Visual X-coordinate hook for the rendering logic
-    float current_y;          // Visual Y-coordinate hook for the rendering logic
-    unsigned char color[4];   // RGBA color array to fulfill the unique color requirement
+    int traveler_index;
+    int arrived_node;
+    int next_node;
+    int is_finished;
+} IPCOverPipeMessage;
+
+/* ---------------- TRAVELER STRUCTURE ---------------- */
+
+typedef struct {
+
+    /* Child process identifier */
+    pid_t child_pid;
+
+    /* Pipe descriptors:
+       pipe_fd[0] -> read end
+       pipe_fd[1] -> write end
+    */
+    int pipe_fd[2];
+
+    /* Source and destination nodes */
+    int src_node;
+    int dest_node;
+
+    /* Path information */
+    int* path;
+    int path_size;
+
+    /* Current movement state */
+    int current_node;
+    int next_node;
+
+    int current_path_index;
+    int current_jump_step;
+
+    /* Timing and animation control */
+    int time_counter;
+    int is_waiting_at_node;
+
+    /* Active state flag */
+    int is_active;
+
+    /* Rendering coordinates */
+    float current_x;
+    float current_y;
+
+    /* Unique traveler color (RGBA) */
+    unsigned char color[4];
+
 } Traveler;
 
+/* ---------------- FUNCTION DECLARATIONS ---------------- */
 
+/* Returns edge weight between two nodes */
+int get_edge_weight_from_data(
+    const GraphData* data,
+    int src,
+    int dst
+);
 
+/* Creates all traveler child processes */
+void spawn_traveler_processes(
+    Traveler* travelers,
+    int num_travelers,
+    const GraphData* data
+);
 
-int get_edge_weight_from_data(const GraphData* data, int src, int dst);
+/* Reads incoming IPC pipe updates */
+void update_all_travelers_from_pipes(
+    Traveler* travelers,
+    int num_travelers
+);
 
+/* Updates animation state for rendering */
+void update_traveler_animation(
+    Traveler* traveler,
+    const GraphData* data
+);
 
-void spawn_traveler_processes(Traveler* travelers, int num_travelers);
+/* Wait for all child processes */
+void wait_for_all_children(
+    Traveler* travelers,
+    int num_travelers
+);
 
-
-void update_traveler_animation(Traveler* traveler, const GraphData* data);
-
-
-void wait_for_all_children(Traveler* travelers, int num_travelers);
-
-#endif //ANIMATION_H
+#endif // ANIMATION_H

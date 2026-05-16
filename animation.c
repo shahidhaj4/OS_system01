@@ -1,12 +1,25 @@
+#define _XOPEN_SOURCE 700
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 #include <signal.h>
+#include <fcntl.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+
 #include "animation.h"
 #include "file_reader.h"
+#include "graph.h"
+#include "dijkstra.h"
 
+#define MAX_NODES 100
+
+extern Graph g_graph;
+
+/* ---------------- EDGE WEIGHT UTILITY ---------------- */
 
 int get_edge_weight_from_data(const GraphData* data, int src, int dst) {
     if (!data) return 1;
@@ -18,107 +31,254 @@ int get_edge_weight_from_data(const GraphData* data, int src, int dst) {
         }
     }
 
-    return 1; // Fallback default weight
+    return 1;
 }
 
+/* ---------------- AUTONOMOUS CHILD PROCESS ---------------- */
 
-static void handle_sigterm(int sig) {
-    (void)sig;
-    printf("[%d] terminated\n", getpid());
-    fflush(stdout);
+static void run_autonomous_child(
+    int traveler_idx,
+    int src,
+    int dest,
+    int write_fd,
+    const GraphData* data
+) {
+    int dist[MAX_NODES];
+    int prev[MAX_NODES];
+
+    int path[MAX_NODES];
+    int path_len = 0;
+
+    /* Child calculates shortest path independently */
+    dijkstra(&g_graph, src, dist, prev);
+
+    /* Extract path */
+    if (!extractPath(prev, src, dest, path, &path_len)) {
+
+        IPCOverPipeMessage msg;
+
+        msg.traveler_index = traveler_idx;
+        msg.arrived_node = src;
+        msg.next_node = -1;
+        msg.is_finished = 1;
+
+        write(write_fd, &msg, sizeof(msg));
+
+        close(write_fd);
+        _exit(0);
+    }
+
+    reversePath(path, path_len);
+
+    /* Travel through path */
+    for (int i = 0; i < path_len; i++) {
+
+        IPCOverPipeMessage msg;
+
+        msg.traveler_index = traveler_idx;
+        msg.arrived_node = path[i];
+
+        /* Destination reached */
+        if (i == path_len - 1) {
+
+            msg.next_node = -1;
+            msg.is_finished = 1;
+
+            write(write_fd, &msg, sizeof(msg));
+            break;
+        }
+
+        /* Normal movement update */
+        msg.next_node = path[i + 1];
+        msg.is_finished = 0;
+
+        write(write_fd, &msg, sizeof(msg));
+
+        int weight = get_edge_weight_from_data(
+            data,
+            path[i],
+            path[i + 1]
+        );
+
+        /* Simulated movement delay */
+        struct timespec delay;
+
+        /* Simulated movement delay */
+        delay.tv_sec = 0;
+        delay.tv_nsec = weight * 300000000L;
+        nanosleep(&delay, NULL);
+
+        /* Pause at node */
+        delay.tv_sec = 1;
+        delay.tv_nsec = 0;
+        nanosleep(&delay, NULL);
+    }
+
+    close(write_fd);
     _exit(0);
 }
 
+/* ---------------- PROCESS CREATION ---------------- */
 
-void spawn_traveler_processes(Traveler* travelers, int num_travelers) {
+void spawn_traveler_processes(
+    Traveler* travelers,
+    int num_travelers,
+    const GraphData* data
+) {
     for (int i = 0; i < num_travelers; i++) {
+
+        /* Create pipe */
+        if (pipe(travelers[i].pipe_fd) < 0) {
+            perror("pipe failed");
+            exit(EXIT_FAILURE);
+        }
+
         pid_t pid = fork();
 
         if (pid < 0) {
-            perror("Fork failed");
+            perror("fork failed");
             exit(EXIT_FAILURE);
         }
-        else if (pid == 0) {
 
-            signal(SIGTERM, handle_sigterm);
+        /* ---------------- CHILD ---------------- */
 
-            printf("[%d] started\n", getpid());
+        if (pid == 0) {
+
+            close(travelers[i].pipe_fd[0]);
+
+            run_autonomous_child(
+                i,
+                travelers[i].src_node,
+                travelers[i].dest_node,
+                travelers[i].pipe_fd[1],
+                data
+            );
+        }
+
+        /* ---------------- PARENT ---------------- */
+
+        travelers[i].child_pid = pid;
+        travelers[i].is_active = 1;
+
+        close(travelers[i].pipe_fd[1]);
+
+        /* Non-blocking pipe */
+        int flags = fcntl(
+            travelers[i].pipe_fd[0],
+            F_GETFL,
+            0
+        );
+
+        fcntl(
+            travelers[i].pipe_fd[0],
+            F_SETFL,
+            flags | O_NONBLOCK
+        );
+
+        /* Initialize traveler state */
+        travelers[i].current_node = travelers[i].src_node;
+        travelers[i].next_node = -1;
+
+        travelers[i].current_path_index = 0;
+        travelers[i].current_jump_step = 0;
+
+        travelers[i].time_counter = 0;
+        travelers[i].is_waiting_at_node = 0;
+
+        travelers[i].current_x = 0.0f;
+        travelers[i].current_y = 0.0f;
+    }
+}
+
+/* ---------------- PIPE UPDATE LOOP ---------------- */
+
+void update_all_travelers_from_pipes(
+    Traveler* travelers,
+    int num_travelers
+) {
+    for (int i = 0; i < num_travelers; i++) {
+
+        if (!travelers[i].is_active)
+            continue;
+
+        IPCOverPipeMessage msg;
+
+        ssize_t bytes_read = read(
+            travelers[i].pipe_fd[0],
+            &msg,
+            sizeof(msg)
+        );
+
+        if (bytes_read != sizeof(msg))
+            continue;
+
+        /* ---------------- UPDATE GUI STATE ---------------- */
+
+        travelers[i].current_node = msg.arrived_node;
+        travelers[i].next_node = msg.next_node;
+
+        travelers[i].current_path_index++;
+
+        travelers[i].is_waiting_at_node = 1;
+        travelers[i].time_counter = 0;
+
+        /*
+         * GUI rendering system can now use:
+         * current_node
+         * next_node
+         * to animate movement and update colors
+         */
+
+        /* ---------------- TERMINAL LOGS ---------------- */
+
+        if (msg.next_node == -1) {
+
+            printf(
+                "[PID=%d] arrived at node %d | DESTINATION\n",
+                travelers[i].child_pid,
+                msg.arrived_node
+            );
+
+            printf(
+                "[PID=%d] finished\n",
+                travelers[i].child_pid
+            );
+
             fflush(stdout);
 
-            while (1) {
-                pause(); // Passive waiting
-            }
+            travelers[i].is_active = 0;
+
+            close(travelers[i].pipe_fd[0]);
         }
         else {
 
-            travelers[i].child_pid = pid;
-            travelers[i].is_active = 1;
+            printf(
+                "[PID=%d] arrived at node %d | next node: %d\n",
+                travelers[i].child_pid,
+                msg.arrived_node,
+                msg.next_node
+            );
+
+            fflush(stdout);
         }
     }
 }
 
-void update_traveler_animation(Traveler* traveler, const GraphData* data) {
-    if (!traveler || !traveler->is_active)
-        return;
+/* ---------------- WAIT FOR CHILDREN ---------------- */
 
-    if (traveler->current_path_index >= traveler->path_size - 1) {
-        traveler->is_active = 0;
-
-        if (traveler->child_pid > 0) {
-            printf("[PARENT] Traveler finished -> killing PID %d\n", traveler->child_pid);
-            kill(traveler->child_pid, SIGTERM);
-        }
-        return;
-    }
-
-    if (traveler->is_waiting_at_node) {
-        traveler->time_counter += 16; // ~60 FPS update frame
-
-        if (traveler->time_counter >= 1000) { // 1 second total wait
-            traveler->is_waiting_at_node = 0;
-            traveler->time_counter = 0;
-        }
-        return;
-    }
-
-    int u = traveler->path[traveler->current_path_index];
-    int v = traveler->path[traveler->current_path_index + 1];
-
-    int weight = get_edge_weight_from_data(data, u, v);
-
-    traveler->time_counter += 16;
-
-    if (traveler->time_counter >= 300) {
-        traveler->time_counter = 0;
-        traveler->current_jump_step++;
-
-        if (traveler->current_jump_step >= weight) {
-            traveler->current_jump_step = 0;
-            traveler->current_path_index++;
-
-            if (traveler->current_path_index < traveler->path_size - 1) {
-                traveler->is_waiting_at_node = 1;
-                traveler->time_counter = 0;
-            }
-        }
-    }
-
-
-    float t = (float)traveler->current_jump_step / (float)weight;
-
-
-    traveler->current_x = t;
-    traveler->current_y = 0.0f;
-}
-
-
-
-
-void wait_for_all_children(Traveler* travelers, int num_travelers) {
+void wait_for_all_children(
+    Traveler* travelers,
+    int num_travelers
+) {
     for (int i = 0; i < num_travelers; i++) {
+
         if (travelers[i].child_pid > 0) {
-            waitpid(travelers[i].child_pid, NULL, 0);
+
+            waitpid(
+                travelers[i].child_pid,
+                NULL,
+                0
+            );
         }
     }
-    printf("[PARENT] All child processes reaped.\n");
 }
