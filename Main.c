@@ -14,7 +14,6 @@
 #define SCREEN_H 700
 #define NODE_R 22
 
-
 #ifndef MAX_TRAVELERS
 #define MAX_TRAVELERS 10
 #endif
@@ -24,6 +23,13 @@ const char *stationNames[MAX_NODES] = {
     "Eilat", "Netanya", "Ashdod", "Tiberias", "Acre",
     "Rishon LeZion", "Herzliya", "Petah Tikva", "Ramla", "Lod"
 };
+
+/*
+ * Global graph used by animation.c.
+ * animation.c has: extern Graph g_graph;
+ * Each child process uses this graph to calculate Dijkstra independently.
+ */
+Graph g_graph;
 
 static int calculate_total_weight(Graph *g, int *path, int path_size) {
     int total = 0;
@@ -47,7 +53,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    /* Read Milestone 4 input file */
+    /* Read Milestone 5 input file */
     GraphData *data = read_file(argv[1]);
     if (!data) {
         return 1;
@@ -67,6 +73,12 @@ int main(int argc, char *argv[]) {
                  data->edges[i].weight);
     }
 
+    /*
+     * Copy graph into global graph.
+     * This is needed because child processes in animation.c use g_graph.
+     */
+    g_graph = *g;
+
     int num_travelers = data->traveler_count;
 
     if (num_travelers <= 0 || num_travelers > MAX_TRAVELERS) {
@@ -79,61 +91,39 @@ int main(int argc, char *argv[]) {
     Traveler travelers[MAX_TRAVELERS];
     int totalWeights[MAX_TRAVELERS];
 
-    /* Calculate Dijkstra path for each traveler */
+    /*
+     * Milestone 5:
+     * The parent does NOT calculate Dijkstra paths.
+     * Each child process calculates its own path independently.
+     */
     for (int i = 0; i < num_travelers; i++) {
         travelers[i].src_node = data->travelers[i].src;
         travelers[i].dest_node = data->travelers[i].dst;
 
-        int dist[MAX_NODES];
-        int prev[MAX_NODES];
+        travelers[i].path = NULL;
+        travelers[i].path_size = 0;
 
-        dijkstra(g, travelers[i].src_node, dist, prev);
-
-        travelers[i].path = malloc(MAX_NODES * sizeof(int));
-        if (!travelers[i].path) {
-            printf("Error: memory allocation failed for traveler path\n");
-
-            for (int j = 0; j < i; j++) {
-                free(travelers[j].path);
-            }
-
-            freeGraph(g);
-            free_graph_data(data);
-            return 1;
-        }
-
-        int pathLen = 0;
-        int hasPath = extractPath(prev,
-                                  travelers[i].src_node,
-                                  travelers[i].dest_node,
-                                  travelers[i].path,
-                                  &pathLen);
-
-        if (hasPath) {
-            reversePath(travelers[i].path, pathLen);
-            travelers[i].path_size = pathLen;
-            totalWeights[i] = calculate_total_weight(g, travelers[i].path, pathLen);
-        } else {
-            travelers[i].path_size = 0;
-            totalWeights[i] = 0;
-            printf("No path found for traveler %d: %d -> %d\n",
-                   i,
-                   travelers[i].src_node,
-                   travelers[i].dest_node);
-        }
+        travelers[i].current_node = travelers[i].src_node;
+        travelers[i].next_node = -1;
 
         travelers[i].current_path_index = 0;
         travelers[i].current_jump_step = 0;
+
         travelers[i].time_counter = 0;
         travelers[i].is_waiting_at_node = 0;
-        travelers[i].is_active = travelers[i].path_size > 0 ? 1 : 0;
+
+        travelers[i].is_active = 1;
+
         travelers[i].current_x = 0.0f;
         travelers[i].current_y = 0.0f;
+
         travelers[i].child_pid = -1;
+
+        totalWeights[i] = 0;
     }
 
     /* Create child process for each traveler */
-    spawn_traveler_processes(travelers, num_travelers);
+    spawn_traveler_processes(travelers, num_travelers, data);
 
     /* Calculate node positions */
     float x[MAX_NODES];
@@ -145,10 +135,16 @@ int main(int argc, char *argv[]) {
         y[i] = SCREEN_H / 2.0f + sinf(angle) * 230.0f;
     }
 
-    InitWindow(SCREEN_W, SCREEN_H, "Milestone 4 - Multiple Travelers");
+    InitWindow(SCREEN_W, SCREEN_H, "Milestone 5 - IPC Travelers");
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
+        /*
+         * Parent receives updates from all child processes.
+         * The parent also prints the required terminal logs.
+         */
+        update_all_travelers_from_pipes(travelers, num_travelers);
+
         for (int i = 0; i < num_travelers; i++) {
             update_traveler_animation(&travelers[i], data);
         }
@@ -156,8 +152,9 @@ int main(int argc, char *argv[]) {
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        DrawText("Milestone 4 - Multiple Travelers", 20, 20, 24, BLACK);
-        DrawText("Parent process controls GUI | Children are sleeping", 20, 55, 18, DARKGRAY);
+        DrawText("Milestone 5 - IPC Travelers", 20, 20, 24, BLACK);
+        DrawText("Children calculate paths and send updates to parent using pipes",
+                 20, 55, 18, DARKGRAY);
 
         /* Draw edges */
         for (int u = 0; u < g->n; u++) {
@@ -231,21 +228,25 @@ int main(int argc, char *argv[]) {
             DrawText(label, textX, textY, 18, BLACK);
         }
 
-        /* Draw all travelers */
+        /*
+         * Draw all travelers using IPC state:
+         * current_node and next_node are updated by pipe messages.
+         */
         for (int i = 0; i < num_travelers; i++) {
-            if (travelers[i].path_size <= 0) {
+            int curr = travelers[i].current_node;
+
+            if (curr < 0 || curr >= g->n) {
                 continue;
             }
-
-            int curr = travelers[i].path[travelers[i].current_path_index];
 
             float px = x[curr];
             float py = y[curr];
 
             if (travelers[i].is_active &&
-                travelers[i].current_path_index < travelers[i].path_size - 1) {
+                travelers[i].next_node >= 0 &&
+                travelers[i].next_node < g->n) {
 
-                int next = travelers[i].path[travelers[i].current_path_index + 1];
+                int next = travelers[i].next_node;
                 float t = travelers[i].current_x;
 
                 px = x[curr] + (x[next] - x[curr]) * t;
@@ -263,13 +264,17 @@ int main(int argc, char *argv[]) {
                          stationNames);
         }
 
+        drawLogPanel();
+
         EndDrawing();
     }
 
     wait_for_all_children(travelers, num_travelers);
 
     for (int i = 0; i < num_travelers; i++) {
-        free(travelers[i].path);
+        if (travelers[i].path) {
+            free(travelers[i].path);
+        }
     }
 
     CloseWindow();

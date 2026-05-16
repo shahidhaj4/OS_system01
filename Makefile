@@ -1,13 +1,14 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -D_POSIX_C_SOURCE=200809L
+CFLAGS = -Wall -Wextra -std=c11 -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L
 
-COMMON = graph.c file_reader.c dijkstra.c library.c
-GUI = Main.c Dijkstra_draw.c drawing.c animation.c
+COMMON = graph.c file_reader.c dijkstra.c
+GUI = Main.c drawing.c animation.c
+
 milestone1:
-	$(CC) $(CFLAGS) -o dijkstra $(COMMON) -lm
+	$(CC) $(CFLAGS) -o dijkstra graph.c file_reader.c dijkstra.c -lm
 
 milestone2:
-	$(CC) $(CFLAGS) -o sim $(COMMON) Main.c Dijkstra_draw.c -lraylib -lm -lX11 -lpthread -ldl -lrt
+	$(CC) $(CFLAGS) -o sim $(COMMON) Main.c drawing.c -lraylib -lm -lX11 -lpthread -ldl -lrt
 
 milestone3:
 	$(CC) $(CFLAGS) -o sim $(COMMON) $(GUI) -lraylib -lm -lX11 -lpthread -ldl -lrt
@@ -15,5 +16,8 @@ milestone3:
 milestone4:
 	$(CC) $(CFLAGS) -o sim $(COMMON) $(GUI) -lraylib -lm -lX11 -lpthread -ldl -lrt
 
+milestone5:
+	$(CC) $(CFLAGS) -o sim $(COMMON) $(GUI) -lraylib -lm -lX11 -lpthread -ldl -lrt
+
 clean:
-	rm -f dijkstra sim *.o dijkstra sim *.o
+	rm -f dijkstra sim *.o

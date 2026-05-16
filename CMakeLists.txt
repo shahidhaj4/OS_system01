@@ -3,20 +3,23 @@ project(OS_system01 C)
 
 set(CMAKE_C_STANDARD 11)
 
+add_compile_definitions(_XOPEN_SOURCE=700)
 add_compile_definitions(_POSIX_C_SOURCE=200809L)
 
-add_library(mylib
-        library.c
+add_executable(sim
+        Main.c
         file_reader.c
         dijkstra.c
         graph.c
-        Dijkstra_draw.c
         drawing.c
         animation.c
 )
 
-add_executable(OS_system01
-        Main.c
+target_link_libraries(sim
+        raylib
+        m
+        X11
+        pthread
+        dl
+        rt
 )
-
-target_link_libraries(OS_system01 mylib raylib m X11 pthread dl rt)

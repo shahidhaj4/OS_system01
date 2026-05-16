@@ -118,7 +118,7 @@ static void run_autonomous_child(
     _exit(0);
 }
 
-/* ---------------- PROCESS CREATION ---------------- */
+
 
 void spawn_traveler_processes(
     Traveler* travelers,
@@ -140,7 +140,7 @@ void spawn_traveler_processes(
             exit(EXIT_FAILURE);
         }
 
-        /* ---------------- CHILD ---------------- */
+
 
         if (pid == 0) {
 
@@ -155,7 +155,7 @@ void spawn_traveler_processes(
             );
         }
 
-        /* ---------------- PARENT ---------------- */
+
 
         travelers[i].child_pid = pid;
         travelers[i].is_active = 1;
@@ -190,7 +190,7 @@ void spawn_traveler_processes(
     }
 }
 
-/* ---------------- PIPE UPDATE LOOP ---------------- */
+
 
 void update_all_travelers_from_pipes(
     Traveler* travelers,
@@ -212,7 +212,7 @@ void update_all_travelers_from_pipes(
         if (bytes_read != sizeof(msg))
             continue;
 
-        /* ---------------- UPDATE GUI STATE ---------------- */
+
 
         travelers[i].current_node = msg.arrived_node;
         travelers[i].next_node = msg.next_node;
@@ -229,7 +229,7 @@ void update_all_travelers_from_pipes(
          * to animate movement and update colors
          */
 
-        /* ---------------- TERMINAL LOGS ---------------- */
+
 
         if (msg.next_node == -1) {
 
@@ -264,7 +264,7 @@ void update_all_travelers_from_pipes(
     }
 }
 
-/* ---------------- WAIT FOR CHILDREN ---------------- */
+
 
 void wait_for_all_children(
     Traveler* travelers,
@@ -280,5 +280,37 @@ void wait_for_all_children(
                 0
             );
         }
+    }
+}
+void update_traveler_animation(
+    Traveler* traveler,
+    const GraphData* data
+) {
+    if (!traveler || !data) return;
+
+    if (!traveler->is_active) return;
+
+    if (traveler->next_node < 0) return;
+
+    int weight = get_edge_weight_from_data(
+        data,
+        traveler->current_node,
+        traveler->next_node
+    );
+
+    if (weight <= 0) {
+        weight = 1;
+    }
+
+    /*
+     * 60 FPS animation.
+     * Higher edge weight means slower movement.
+     */
+    float step = 1.0f / (weight * 60.0f);
+
+    traveler->current_x += step;
+
+    if (traveler->current_x >= 1.0f) {
+        traveler->current_x = 0.0f;
     }
 }

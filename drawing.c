@@ -117,10 +117,10 @@ void drawArrivalMessage(int travelerIndex, int dst, int totalWeight,
     int l1W = MeasureText(line1, 20);
     DrawText(line1, 450 - l1W / 2, panelY + 10, 20, ARRIVAL_TITLE);
 
-    char line2[64];
+    /*char line2[64];
     snprintf(line2, sizeof(line2), "Total journey weight: %d", totalWeight);
     int l2W = MeasureText(line2, 18);
-    DrawText(line2, 450 - l2W / 2, panelY + 38, 18, ARRIVAL_TEXT);
+    DrawText(line2, 450 - l2W / 2, panelY + 38, 18, ARRIVAL_TEXT);*/
 }
 
 void drawTraveler(int travelerIndex, float px, float py,

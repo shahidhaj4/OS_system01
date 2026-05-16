@@ -24,6 +24,10 @@ make milestone3
 make milestone4  
 ./sim graph.txt
 
+### Milestone 5 (IPC)
+make milestone5  
+./sim graph.txt
+
 ## 🧹 Clean Build Files
 make clean
 
@@ -49,7 +53,7 @@ Example:
 
 ---
 
-### Milestone 4 Format
+### Milestones 4–5 Format
 
 Example:
 
@@ -99,7 +103,34 @@ Example:
 - Parent sends a signal when a traveler reaches the destination
 - Parent waits for all child processes before exiting
 
+### Milestone 5
+- IPC communication between child processes and the parent process.
+- Each child process calculates its own Dijkstra shortest path independently.
+- Each child sends its current node and next node to the parent through a pipe.
+- The parent process receives pipe messages, updates the GUI, and prints the log.
+- Terminal logs are printed only by the parent process.
+- The chosen IPC method is pipes.
 
+## 🔗 IPC Choice - Milestone 5
+
+For Milestone 5, we used pipes as the IPC mechanism.
+
+Each traveler is represented by a child process.  
+The child process calculates its own Dijkstra shortest path independently and sends updates to the parent process through a pipe.
+
+Each message contains:
+- Traveler index
+- Arrived node
+- Next node
+- Finished status
+
+The parent process receives these messages, updates the GUI, and prints the required terminal log.
+
+Example log format:
+
+[PID=1021] arrived at node 0 | next node: 2  
+[PID=1021] arrived at node 4 | DESTINATION  
+[PID=1021] finished
 ## 👥 Task Distribution
 
 ### Milestone 1 & 2
@@ -157,11 +188,33 @@ Updated the input reading and handled path calculation for each traveler.
 **Files:** `drawing.c`, `drawing.h`  
 Displayed the travelers on the graph with different colors and arrival messages.
 
+### Milestone 5
+
+#### Shahid Hassan Haj – Main, Build & Documentation
+**Files:** `Main.c`, `Makefile`, `CMakeLists.txt`, `README.md`  
+Connected the project modules for Milestone 5, added IPC integration through pipes, updated the build commands, and documented the IPC implementation.
+
+#### Miral Agha – IPC & Animation Logic
+**Files:** `animation.c`, `animation.h`  
+Implemented child process behavior, pipe messages, traveler state updates, and movement timing for autonomous travelers.
+
+#### Ghada Bader – File Reading & Path Handling
+**Files:** `file_reader.c`, `file_reader.h`, `dijkstra.c`, `dijkstra.h`  
+Updated input reading for multiple travelers and provided Dijkstra path extraction functions used by each child process.
+
+#### Shahd Julani – Drawing & Visualization
+**Files:** `drawing.c`, `drawing.h`, `graph.txt`  
+Displayed travelers with different colors, drew the graph, and prepared the test input file for Milestone 5.
+
 ## 📝 Notes
-- Uses adjacency list
-- Memory handled properly
-- Max nodes: 15
-- Milestone 4 uses fork() to create one child process for each traveler
-- The parent process manages the GUI and calculates the paths
-- Each child process prints [PID] started and then sleeps
-- Travelers move simultaneously and are displayed with different colors
+- Uses adjacency list.
+- Memory handled properly.
+- Max nodes: 15.
+- Milestone 4 uses `fork()` to create one child process for each traveler.
+- In Milestone 4, the parent process calculates the paths and manages the GUI.
+- Milestone 5 uses pipes for IPC.
+- In Milestone 5, each child process calculates its own Dijkstra path independently.
+- Child processes send node updates to the parent process through pipes.
+- Only the parent process prints terminal logs.
+- The parent process updates the GUI according to the messages received from the children.
+- Travelers move simultaneously and are displayed with different colors.
