@@ -1,3 +1,6 @@
 sim
 dijkstra
 *.o
+cmake-build-debug/
+.idea/
+
