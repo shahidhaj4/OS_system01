@@ -9,23 +9,28 @@ It finds the shortest path between stations using Dijkstra’s algorithm and vis
 ## 🚀 How to Run
 
 ### Milestone 1 (Console)
-make milestone1  
-./dijkstra graph.txt
+git checkout -f milestone1
+make milestone1
+./sim graph.txt
 
 ### Milestone 2 (GUI)
-make milestone2  
+git checkout -f milestone2
+make milestone2
 ./sim graph.txt
 
 ### Milestone 3 (Animation)
-make milestone3  
+git checkout -f milestone3
+make milestone3
 ./sim graph.txt
 
 ### Milestone 4 (Multiple Travelers + fork)
-make milestone4  
+git checkout -f milestone4
+make milestone4
 ./sim graph.txt
 
 ### Milestone 5 (IPC)
-make milestone5  
+git checkout -f milestone5
+make milestone5
 ./sim graph.txt
 
 ## 🧹 Clean Build Files
