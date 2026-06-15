@@ -13,6 +13,8 @@ add_executable(sim
         graph.c
         drawing.c
         animation.c
+        sync.c
+        sync.h
 )
 
 target_link_libraries(sim
