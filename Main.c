@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #include <limits.h>
 
 #include "raylib.h"
@@ -232,39 +233,59 @@ int main(int argc, char *argv[]) {
          * Draw all travelers using IPC state:
          * current_node and next_node are updated by pipe messages.
          */
+        /* ---- Milestone 6: compute waiter-spread slots per node ---- */
+        int waiterSlot[MAX_TRAVELERS];
+        int waitCount[MAX_NODES];
+        memset(waitCount, 0, sizeof(waitCount));
+
+        for (int i = 0; i < num_travelers; i++) {
+            waiterSlot[i] = 0;
+            if (travelers[i].state == WAITING) {
+                int n = travelers[i].current_node;
+                if (n >= 0 && n < g->n) {
+                    waiterSlot[i] = waitCount[n];  /* 0, 1, 2 … */
+                    waitCount[n]++;
+                }
+            }
+        }
+
+        /* ---- Draw all travelers ---- */
         for (int i = 0; i < num_travelers; i++) {
             int curr = travelers[i].current_node;
-
-            if (curr < 0 || curr >= g->n) {
-                continue;
-            }
+            if (curr < 0 || curr >= g->n) continue;
 
             float px = x[curr];
             float py = y[curr];
 
-            if (travelers[i].is_active &&
+            /* Interpolate along edge while MOVING */
+            if (travelers[i].state == MOVING &&
+                travelers[i].is_active &&
                 travelers[i].next_node >= 0 &&
                 travelers[i].next_node < g->n) {
 
-                int next = travelers[i].next_node;
-                float t = travelers[i].current_x;
-
+                int   next = travelers[i].next_node;
+                float t    = travelers[i].current_x;   /* 0 → 1 */
                 px = x[curr] + (x[next] - x[curr]) * t;
                 py = y[curr] + (y[next] - y[curr]) * t;
-            }
+                }
 
             int arrived = travelers[i].is_active ? 0 : 1;
 
-            drawTraveler(i,
-                         px,
-                         py,
-                         travelers[i].dest_node,
-                         arrived,
-                         totalWeights[i],
-                         stationNames);
+            drawTraveler(
+                i,
+                px, py,
+                travelers[i].dest_node,
+                arrived,
+                totalWeights[i],
+                stationNames,
+                travelers[i].state,   /* NEW – Milestone 6 */
+                waiterSlot[i]         /* NEW – Milestone 6 */
+            );
         }
 
         drawLogPanel();
+
+
 
         EndDrawing();
     }
