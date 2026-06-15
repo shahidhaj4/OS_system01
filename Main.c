@@ -10,6 +10,7 @@
 #include "dijkstra.h"
 #include "animation.h"
 #include "drawing.h"
+#include "sync.h"
 
 #define SCREEN_W 900
 #define SCREEN_H 700
@@ -122,6 +123,8 @@ int main(int argc, char *argv[]) {
 
         totalWeights[i] = 0;
     }
+
+    init_node_locks(g->n);
 
     /* Create child process for each traveler */
     spawn_traveler_processes(travelers, num_travelers, data);
@@ -291,6 +294,8 @@ int main(int argc, char *argv[]) {
     }
 
     wait_for_all_children(travelers, num_travelers);
+
+    destroy_node_locks(g->n);
 
     for (int i = 0; i < num_travelers; i++) {
         if (travelers[i].path) {

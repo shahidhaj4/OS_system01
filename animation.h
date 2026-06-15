@@ -4,6 +4,16 @@
 #include <sys/types.h>
 #include "file_reader.h"
 
+
+/* ---------------- TRAVELER STATE ---------------- */
+
+typedef enum {
+    MOVING,
+    WAITING,
+    INSIDE_NODE,
+    FINISHED
+} TravelerState;
+
 /* ---------------- IPC MESSAGE STRUCTURE ---------------- */
 
 typedef struct {
@@ -11,6 +21,7 @@ typedef struct {
     int arrived_node;
     int next_node;
     int is_finished;
+    TravelerState state;
 } IPCOverPipeMessage;
 
 /* ---------------- TRAVELER STRUCTURE ---------------- */
@@ -47,6 +58,8 @@ typedef struct {
 
     /* Active state flag */
     int is_active;
+
+    TravelerState state;
 
     /* Rendering coordinates */
     float current_x;
