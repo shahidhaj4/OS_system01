@@ -5,17 +5,20 @@ set(CMAKE_C_STANDARD 11)
 
 add_compile_definitions(_XOPEN_SOURCE=700)
 add_compile_definitions(_POSIX_C_SOURCE=200809L)
+add_compile_definitions(_DEFAULT_SOURCE)
 
 add_executable(sim
-        Main.c
+        sim_main.c
         file_reader.c
         dijkstra.c
         graph.c
         drawing.c
-        animation.c
+        Dijkstra_draw.c
         sync.c
         sync.h
 )
+
+target_compile_definitions(sim PRIVATE MILESTONE=6)
 
 target_link_libraries(sim
         raylib

@@ -95,9 +95,10 @@ static void run_autonomous_child(
 
         /* Simulate actual travel delay based on the edge weight */
         int weight = get_edge_weight_from_data(data, path[i], path[i + 1]);
+        long total_nsec = weight * 300000000L;
         struct timespec delay;
-        delay.tv_sec = 0;
-        delay.tv_nsec = weight * 300000000L;
+        delay.tv_sec = total_nsec / 1000000000L;
+        delay.tv_nsec = total_nsec % 1000000000L;
         nanosleep(&delay, NULL);
     }
 

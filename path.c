@@ -11,7 +11,7 @@
 #include "dijkstra.h"
 #include "animation.h"
 #include "drawing.h"
-#include "dijkstra_draw.h"
+#include "Dijkstra_draw.h"
 #include "raylib.h"
 
 #define SCREEN_W 900

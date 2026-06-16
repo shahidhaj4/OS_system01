@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <limits.h>
-#include "dijkstra_draw.h"
+#include "Dijkstra_draw.h"
 #include "dijkstra.h"
 #include "graph.h"
 #include "raylib.h"

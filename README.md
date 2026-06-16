@@ -9,37 +9,32 @@ It finds the shortest path between stations using Dijkstra’s algorithm and vis
 ## 🚀 How to Run
 
 ### Milestone 1 (Console)
-git checkout -f milestone1
-
 make milestone1
 
-./sim graph.txt
+./dijkstra graph.txt
 
 ### Milestone 2 (GUI)
-git checkout -f milestone2
-
 make milestone2
 
 ./sim graph.txt
 
 ### Milestone 3 (Animation)
-git checkout -f milestone3
-
 make milestone3
 
 ./sim graph.txt
 
 ### Milestone 4 (Multiple Travelers + fork)
-git checkout -f milestone4
-
 make milestone4
 
 ./sim graph.txt
 
 ### Milestone 5 (IPC)
-git checkout -f milestone5
-
 make milestone5
+
+./sim graph.txt
+
+### Milestone 6 (Synchronization)
+make milestone6
 
 ./sim graph.txt
 
@@ -68,7 +63,7 @@ Example:
 
 ---
 
-### Milestones 4–5 Format
+### Milestones 4–6 Format
 
 Example:
 
@@ -126,6 +121,19 @@ Example:
 - Terminal logs are printed only by the parent process.
 - The chosen IPC method is pipes.
 
+### Milestone 6
+- Node synchronization between multiple traveler processes.
+- Each graph node has its own shared lock.
+- Only one traveler can be inside the same node at the same time.
+- If more than one traveler reaches the same node, the others wait outside the node.
+- Each traveler stays inside the node for one full second before leaving.
+- The GUI clearly shows traveler states:
+    - WAITING: traveler is waiting outside the node.
+    - INSIDE_NODE: traveler is currently inside the node.
+    - MOVING: traveler is moving between nodes.
+    - FINISHED: traveler reached the destination.
+- Synchronization is implemented using shared process mutexes.
+
 ## 🔗 IPC Choice - Milestone 5
 
 For Milestone 5, we used pipes as the IPC mechanism.
@@ -146,6 +154,22 @@ Example log format:
 [PID=1021] arrived at node 0 | next node: 2  
 [PID=1021] arrived at node 4 | DESTINATION  
 [PID=1021] finished
+
+## 🔒 Synchronization Choice - Milestone 6
+
+For Milestone 6, we used process-shared mutexes for node synchronization.
+
+Each node has one mutex lock stored in shared memory.  
+The shared memory is created using `mmap`, so all child processes can access the same locks after `fork()`.
+
+When a traveler reaches a node:
+1. The child sends a `WAITING` message to the parent.
+2. The child tries to lock the node mutex.
+3. After the lock is acquired, the child sends an `INSIDE_NODE` message.
+4. The child stays inside the node for one full second.
+5. The child unlocks the node and continues moving.
+
+This guarantees that no more than one traveler can be inside the same node at the same time.
 ## 👥 Task Distribution
 
 ### Milestone 1 & 2
@@ -221,6 +245,27 @@ Updated input reading for multiple travelers and provided Dijkstra path extracti
 **Files:** `drawing.c`, `drawing.h`, `graph.txt`  
 Displayed travelers with different colors, drew the graph, and prepared the test input file for Milestone 5.
 
+### Milestone 6
+
+#### Ghadabader – Synchronization and Node Locks
+**Files:** `sync.c`, `sync.h`, `animation.c`  
+Implemented the synchronization mechanism for graph nodes using process-shared mutex locks.  
+Each node has its own lock, so only one traveler can enter and stay inside the node for one full second before another traveler can enter.
+
+#### Miral Agha – Traveler States and Movement Logic
+**Files:** `animation.c`, `animation.h`  
+Added clear traveler states: `MOVING`, `WAITING`, `INSIDE_NODE`, and `FINISHED`.  
+Updated the traveler process logic so each traveler reports its state to the parent process through IPC while moving, waiting, entering a node, or finishing the route.
+
+#### Shahd Julani – GUI and Waiting Visualization
+**Files:** `drawing.c`, `drawing.h`, `Dijkstra_draw.c`, `Dijkstra_draw.h`  
+Updated the GUI to clearly display traveler states using different colors and visual indicators.  
+Waiting travelers are shown outside the node with a `WAIT` label and are slightly shifted so multiple waiting travelers can be seen clearly.
+
+#### Shahid Hassan Haj – Integration, Build, and Main Flow
+**Files:** `Main.c`, `Makefile`, `README.md`, `graph.txt`  
+Connected the synchronization, IPC updates, traveler states, and GUI drawing into the main simulation flow.  
+Updated the build commands for `make milestone6`, prepared the test input file, and documented the Milestone 6 synchronization mechanism in the README.
 ## 📝 Notes
 - Uses adjacency list.
 - Memory handled properly.
@@ -233,3 +278,9 @@ Displayed travelers with different colors, drew the graph, and prepared the test
 - Only the parent process prints terminal logs.
 - The parent process updates the GUI according to the messages received from the children.
 - Travelers move simultaneously and are displayed with different colors.
+- Milestone 6 uses shared mutex locks for node synchronization.
+- Each node has one process-shared mutex.
+- The mutexes are created in shared memory using `mmap`.
+- The parent initializes the node locks before creating child processes.
+- Child processes call `lock_node()` before entering a node and `unlock_node()` after staying inside for one second.
+- The GUI displays waiting travelers outside the node and shows which traveler is inside.

@@ -25,6 +25,7 @@ typedef struct {
 } GraphData;
 
 GraphData* read_file(const char* filename);
+GraphData* read_single_query_file(const char* filename, int* src, int* dst);
 void free_graph_data(GraphData* data);
 
 #endif
