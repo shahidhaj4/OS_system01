@@ -79,6 +79,7 @@ Example:
 0 4  
 2 3
 ### Milestones 6 Format
+Example:
 5 6
 0 2 1
 1 2 1
@@ -90,6 +91,7 @@ Example:
 0 4
 1 4
 3 4
+
 - First line: number of nodes (N) and edges (M)
 - Next M lines: edges (src dst weight)
 - Next line: number of travelers

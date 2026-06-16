@@ -316,6 +316,7 @@ static void receive_pipe_updates(SimTraveler* travelers, int count) {
 static void update_ipc_animation(Graph* g, SimTraveler* travelers, int count, float dt) {
     for (int i = 0; i < count; i++) {
         SimTraveler* t = &travelers[i];
+
         if (!t->finished && t->state == MOVING && t->next_node >= 0) {
             float duration = edge_weight(g, t->current_node, t->next_node) * EDGE_STEP_SECONDS;
             t->edge_elapsed += dt;
@@ -330,6 +331,7 @@ static void cleanup_children(SimTraveler* travelers, int count) {
             close(travelers[i].pipe_fd[0]);
             travelers[i].pipe_fd[0] = -1;
         }
+
         if (travelers[i].child_pid > 0) {
             kill(travelers[i].child_pid, SIGTERM);
             waitpid(travelers[i].child_pid, NULL, 0);
@@ -345,6 +347,7 @@ static void draw_travelers(Graph* g, SimTraveler* travelers, int count, float* x
     for (int i = 0; i < count; i++) {
         if (travelers[i].state == WAITING) {
             int node = travelers[i].current_node;
+
             if (node >= 0 && node < MAX_NODES) {
                 waiter_slot[i] = wait_count[node]++;
             }
@@ -354,6 +357,7 @@ static void draw_travelers(Graph* g, SimTraveler* travelers, int count, float* x
     for (int i = 0; i < count; i++) {
         SimTraveler* t = &travelers[i];
         int current = t->current_node;
+
         if (current < 0 || current >= g->n) continue;
 
         float px = x[current];
@@ -362,8 +366,10 @@ static void draw_travelers(Graph* g, SimTraveler* travelers, int count, float* x
         if (t->state == MOVING && t->next_node >= 0 && t->next_node < g->n) {
             float duration = edge_weight(g, current, t->next_node) * EDGE_STEP_SECONDS;
             float progress = duration > 0.0f ? t->edge_elapsed / duration : 1.0f;
+
             if (progress < 0.0f) progress = 0.0f;
             if (progress > 1.0f) progress = 1.0f;
+
             px = x[current] + (x[t->next_node] - x[current]) * progress;
             py = y[current] + (y[t->next_node] - y[current]) * progress;
         }
@@ -399,6 +405,7 @@ int main(int argc, char* argv[]) {
 
     SimTraveler travelers[MAX_TRAVELERS_LOCAL];
     int traveler_count = MILESTONE <= 3 ? 1 : data->traveler_count;
+
     if (traveler_count > MAX_TRAVELERS_LOCAL) {
         fprintf(stderr, "Error: maximum travelers is %d\n", MAX_TRAVELERS_LOCAL);
         freeGraph(g);
@@ -412,9 +419,9 @@ int main(int argc, char* argv[]) {
     } else {
         for (int i = 0; i < traveler_count; i++) {
             init_traveler(&travelers[i], data->travelers[i].src, data->travelers[i].dst);
+
             if (MILESTONE == 4) {
                 start_parent_driven_traveler(g, &travelers[i]);
-                spawn_sleeping_child(&travelers[i]);
             }
         }
     }
@@ -423,27 +430,18 @@ int main(int argc, char* argv[]) {
         init_node_locks(g->n);
     }
 
-    if (MILESTONE == 5 || MILESTONE == 6) {
-        for (int i = 0; i < traveler_count; i++) {
-            int total = 0;
-            int path_len = 0;
-            int path[MAX_NODES];
-            calculate_path(g, travelers[i].src, travelers[i].dst, path, &path_len, &total);
-            travelers[i].total_weight = total;
-            spawn_ipc_child(g, &travelers[i], i, MILESTONE == 6);
-        }
-    }
-
     float x[MAX_NODES];
     float y[MAX_NODES];
     compute_positions(g->n, x, y);
 
     char title[64];
     snprintf(title, sizeof(title), "OS Graph Simulation - Milestone %d", MILESTONE);
+
     InitWindow(SCREEN_W, SCREEN_H, title);
     SetTargetFPS(60);
 
-    int playing = MILESTONE == 3 ? 0 : 1;
+    int playing = (MILESTONE == 3 || MILESTONE == 4) ? 0 : 1;
+    int started = (MILESTONE == 4 || MILESTONE == 5 || MILESTONE == 6) ? 0 : 1;
 
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
@@ -451,12 +449,35 @@ int main(int argc, char* argv[]) {
         if (MILESTONE == 3 && IsKeyPressed(KEY_SPACE)) {
             playing = !playing;
         }
+        if (MILESTONE == 4 && !started && IsKeyPressed(KEY_SPACE)) {
+            for (int i = 0; i < traveler_count; i++) {
+                spawn_sleeping_child(&travelers[i]);
+            }
+
+            playing = 1;
+            started = 1;
+        }
+
+        if ((MILESTONE == 5 || MILESTONE == 6) && !started && IsKeyPressed(KEY_SPACE)) {
+            for (int i = 0; i < traveler_count; i++) {
+                int total = 0;
+                int path_len = 0;
+                int path[MAX_NODES];
+
+                calculate_path(g, travelers[i].src, travelers[i].dst, path, &path_len, &total);
+                travelers[i].total_weight = total;
+
+                spawn_ipc_child(g, &travelers[i], i, MILESTONE == 6);
+            }
+
+            started = 1;
+        }
 
         if (MILESTONE == 3 || MILESTONE == 4) {
             for (int i = 0; i < traveler_count; i++) {
                 update_parent_driven_traveler(g, &travelers[i], dt, playing);
             }
-        } else if (MILESTONE == 5 || MILESTONE == 6) {
+        } else if ((MILESTONE == 5 || MILESTONE == 6) && started) {
             receive_pipe_updates(travelers, traveler_count);
             update_ipc_animation(g, travelers, traveler_count, dt);
         }
@@ -465,28 +486,44 @@ int main(int argc, char* argv[]) {
         ClearBackground(RAYWHITE);
 
         DrawText(title, 20, 20, 24, BLACK);
+
         if (MILESTONE == 3) {
             DrawText(playing ? "SPACE: stop" : "SPACE: play", 20, 55, 18, DARKGRAY);
         }
+
         if (MILESTONE == 5) {
             DrawText("Children calculate paths and send node updates through pipes", 20, 55, 18, DARKGRAY);
         }
+
         if (MILESTONE == 6) {
             DrawText("Pipes + process-shared node locks", 20, 55, 18, DARKGRAY);
+        }
+        if (MILESTONE == 4 && !started) {
+            DrawText("Press SPACE to start", 20, 85, 20, DARKGREEN);
+        } else if (MILESTONE == 4) {
+            DrawText("Running...", 20, 85, 20, RED);
+        }
+
+        if ((MILESTONE == 5 || MILESTONE == 6) && !started) {
+            DrawText("Press SPACE to start", 20, 85, 20, DARKGREEN);
+        } else if (MILESTONE == 5 || MILESTONE == 6) {
+            DrawText("Running...", 20, 85, 20, RED);
         }
 
         drawGraph(g, x, y, NODE_RADIUS, stationNames);
 
-        if (MILESTONE >= 3) {
+        if (MILESTONE == 3 || (MILESTONE >= 4 && started)) {
             draw_travelers(g, travelers, traveler_count, x, y);
-        } else if (MILESTONE == 2) {
+        }
+         else if (MILESTONE == 2) {
             int dist[MAX_NODES];
             int prev[MAX_NODES];
+
             dijkstra(g, query_src, dist, prev);
             drawDijkstraResult(g, prev, dist, query_src, query_dst, x, y, NODE_RADIUS);
         }
 
-        if (MILESTONE >= 5) {
+        if (MILESTONE >= 5 && started) {
             drawLogPanel();
         }
 
@@ -494,12 +531,15 @@ int main(int argc, char* argv[]) {
     }
 
     cleanup_children(travelers, traveler_count);
+
     if (MILESTONE == 6) {
         destroy_node_locks(g->n);
     }
 
     CloseWindow();
+
     freeGraph(g);
     free_graph_data(data);
+
     return 0;
 }

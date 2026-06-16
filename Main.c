@@ -26,11 +26,6 @@ const char *stationNames[MAX_NODES] = {
     "Rishon LeZion", "Herzliya", "Petah Tikva", "Ramla", "Lod"
 };
 
-/*
- * Global graph used by animation.c.
- * animation.c has: extern Graph g_graph;
- * Each child process uses this graph to calculate Dijkstra independently.
- */
 Graph g_graph;
 
 static int calculate_total_weight(Graph *g, int *path, int path_size) {
@@ -55,13 +50,11 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    /* Read Milestone 5 input file */
     GraphData *data = read_file(argv[1]);
     if (!data) {
         return 1;
     }
 
-    /* Build graph from GraphData */
     Graph *g = create_graph(data->n, data->m);
     if (!g) {
         free_graph_data(data);
@@ -75,10 +68,6 @@ int main(int argc, char *argv[]) {
                  data->edges[i].weight);
     }
 
-    /*
-     * Copy graph into global graph.
-     * This is needed because child processes in animation.c use g_graph.
-     */
     g_graph = *g;
 
     int num_travelers = data->traveler_count;
@@ -93,11 +82,6 @@ int main(int argc, char *argv[]) {
     Traveler travelers[MAX_TRAVELERS];
     int totalWeights[MAX_TRAVELERS];
 
-    /*
-     * Milestone 5:
-     * The parent does NOT calculate Dijkstra paths.
-     * Each child process calculates its own path independently.
-     */
     for (int i = 0; i < num_travelers; i++) {
         travelers[i].src_node = data->travelers[i].src;
         travelers[i].dest_node = data->travelers[i].dst;
@@ -114,7 +98,8 @@ int main(int argc, char *argv[]) {
         travelers[i].time_counter = 0;
         travelers[i].is_waiting_at_node = 0;
 
-        travelers[i].is_active = 1;
+        travelers[i].is_active = 0;
+        travelers[i].state = WAITING;
 
         travelers[i].current_x = 0.0f;
         travelers[i].current_y = 0.0f;
@@ -126,10 +111,6 @@ int main(int argc, char *argv[]) {
 
     init_node_locks(g->n);
 
-    /* Create child process for each traveler */
-    spawn_traveler_processes(travelers, num_travelers, data);
-
-    /* Calculate node positions */
     float x[MAX_NODES];
     float y[MAX_NODES];
 
@@ -142,25 +123,40 @@ int main(int argc, char *argv[]) {
     InitWindow(SCREEN_W, SCREEN_H, "Milestone 5 - IPC Travelers");
     SetTargetFPS(60);
 
-    while (!WindowShouldClose()) {
-        /*
-         * Parent receives updates from all child processes.
-         * The parent also prints the required terminal logs.
-         */
-        update_all_travelers_from_pipes(travelers, num_travelers);
+    int has_started = 0;
 
-        for (int i = 0; i < num_travelers; i++) {
-            update_traveler_animation(&travelers[i], data);
+    while (!WindowShouldClose()) {
+        if (!has_started && IsKeyPressed(KEY_SPACE)) {
+            for (int i = 0; i < num_travelers; i++) {
+                travelers[i].is_active = 1;
+            }
+
+            spawn_traveler_processes(travelers, num_travelers, data);
+            has_started = 1;
+        }
+
+        if (has_started) {
+            update_all_travelers_from_pipes(travelers, num_travelers);
+
+            for (int i = 0; i < num_travelers; i++) {
+                update_traveler_animation(&travelers[i], data);
+            }
         }
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
         DrawText("Milestone 5 - IPC Travelers", 20, 20, 24, BLACK);
+
         DrawText("Children calculate paths and send updates to parent using pipes",
                  20, 55, 18, DARKGRAY);
 
-        /* Draw edges */
+        DrawText(has_started ? "Running..." : "Press SPACE to start",
+                 20,
+                 85,
+                 20,
+                 has_started ? RED : DARKGREEN);
+
         for (int u = 0; u < g->n; u++) {
             for (Edge *e = g->adj[u]; e != NULL; e = e->next) {
                 int v = e->dest;
@@ -205,7 +201,6 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        /* Draw nodes */
         for (int i = 0; i < g->n; i++) {
             DrawCircle((int)x[i], (int)y[i], NODE_R, ORANGE);
             DrawCircleLines((int)x[i], (int)y[i], NODE_R, BROWN);
@@ -232,63 +227,60 @@ int main(int argc, char *argv[]) {
             DrawText(label, textX, textY, 18, BLACK);
         }
 
-        /*
-         * Draw all travelers using IPC state:
-         * current_node and next_node are updated by pipe messages.
-         */
-        /* ---- Milestone 6: compute waiter-spread slots per node ---- */
         int waiterSlot[MAX_TRAVELERS];
         int waitCount[MAX_NODES];
         memset(waitCount, 0, sizeof(waitCount));
 
         for (int i = 0; i < num_travelers; i++) {
             waiterSlot[i] = 0;
-            if (travelers[i].state == WAITING) {
+
+            if (has_started && travelers[i].state == WAITING) {
                 int n = travelers[i].current_node;
+
                 if (n >= 0 && n < g->n) {
-                    waiterSlot[i] = waitCount[n];  /* 0, 1, 2 … */
+                    waiterSlot[i] = waitCount[n];
                     waitCount[n]++;
                 }
             }
         }
 
-        /* ---- Draw all travelers ---- */
-        for (int i = 0; i < num_travelers; i++) {
-            int curr = travelers[i].current_node;
-            if (curr < 0 || curr >= g->n) continue;
+        if (has_started) {
+            for (int i = 0; i < num_travelers; i++) {
+                int curr = travelers[i].current_node;
+                if (curr < 0 || curr >= g->n) continue;
 
-            float px = x[curr];
-            float py = y[curr];
+                float px = x[curr];
+                float py = y[curr];
 
-            /* Interpolate along edge while MOVING */
-            if (travelers[i].state == MOVING &&
-                travelers[i].is_active &&
-                travelers[i].next_node >= 0 &&
-                travelers[i].next_node < g->n) {
+                if (travelers[i].state == MOVING &&
+                    travelers[i].is_active &&
+                    travelers[i].next_node >= 0 &&
+                    travelers[i].next_node < g->n) {
 
-                int   next = travelers[i].next_node;
-                float t    = travelers[i].current_x;   /* 0 → 1 */
-                px = x[curr] + (x[next] - x[curr]) * t;
-                py = y[curr] + (y[next] - y[curr]) * t;
+                    int next = travelers[i].next_node;
+                    float t = travelers[i].current_x;
+
+                    px = x[curr] + (x[next] - x[curr]) * t;
+                    py = y[curr] + (y[next] - y[curr]) * t;
                 }
 
-            int arrived = travelers[i].is_active ? 0 : 1;
+                int arrived = travelers[i].is_active ? 0 : 1;
 
-            drawTraveler(
-                i,
-                px, py,
-                travelers[i].dest_node,
-                arrived,
-                totalWeights[i],
-                stationNames,
-                travelers[i].state,   /* NEW – Milestone 6 */
-                waiterSlot[i]         /* NEW – Milestone 6 */
-            );
+                drawTraveler(
+                    i,
+                    px,
+                    py,
+                    travelers[i].dest_node,
+                    arrived,
+                    totalWeights[i],
+                    stationNames,
+                    travelers[i].state,
+                    waiterSlot[i]
+                );
+            }
         }
 
         drawLogPanel();
-
-
 
         EndDrawing();
     }

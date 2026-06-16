@@ -10,12 +10,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-/* External graph structure used for path calculations */
+
 extern Graph g_graph;
 
-/* -------------------------------------------------------------------- *
- *                         IMPLEMENTATION                               *
- * -------------------------------------------------------------------- */
+
 
 int get_edge_weight_from_data(const GraphData* data, int src, int dst) {
     if (!data) return 1;
@@ -28,7 +26,7 @@ int get_edge_weight_from_data(const GraphData* data, int src, int dst) {
     return 1; /* Default weight if edge is not found */
 }
 
-/* ------------------ AUTONOMOUS CHILD PROCESS LOGIC ------------------ */
+
 
 static void run_autonomous_child(
     int traveler_idx,
@@ -42,7 +40,7 @@ static void run_autonomous_child(
     int path[MAX_NODES];
     int path_len = 0;
 
-    /* Calculate the shortest path independently for each traveler */
+
     dijkstra(&g_graph, src, dist, prev);
 
     if (!extractPath(prev, src, dest, path, &path_len)) {
@@ -97,8 +95,8 @@ static void run_autonomous_child(
         int weight = get_edge_weight_from_data(data, path[i], path[i + 1]);
         long total_nsec = weight * 300000000L;
         struct timespec delay;
-        delay.tv_sec = total_nsec / 1000000000L;
-        delay.tv_nsec = total_nsec % 1000000000L;
+        delay.tv_sec = 0;
+        delay.tv_nsec =300000000L; /* 300 milliseconds */
         nanosleep(&delay, NULL);
     }
 
@@ -106,17 +104,17 @@ static void run_autonomous_child(
     _exit(0);
 }
 
-/* ------------------ SPAWN PROCESSES LOGIC ------------------ */
+
 
 void spawn_traveler_processes(Traveler* travelers, int num_travelers, const GraphData* data) {
     for (int i = 0; i < num_travelers; i++) {
-        /* Create pipe for each traveler */
+
         if (pipe(travelers[i].pipe_fd) < 0) {
             perror("Failed to create pipe");
             exit(1);
         }
 
-        /* Set the read end of the pipe to non-blocking for the parent process */
+
         int flags = fcntl(travelers[i].pipe_fd[0], F_GETFL, 0);
         fcntl(travelers[i].pipe_fd[0], F_SETFL, flags | O_NONBLOCK);
 
@@ -127,11 +125,11 @@ void spawn_traveler_processes(Traveler* travelers, int num_travelers, const Grap
         }
 
         if (pid == 0) {
-            /* Child process: close read end and run the simulation */
+
             close(travelers[i].pipe_fd[0]);
             run_autonomous_child(i, travelers[i].src_node, travelers[i].dest_node, travelers[i].pipe_fd[1], data);
         } else {
-            /* Parent process: close write end, save child PID, and initialize state */
+
             close(travelers[i].pipe_fd[1]);
             travelers[i].child_pid = pid;
             travelers[i].is_active = 1;
@@ -140,7 +138,7 @@ void spawn_traveler_processes(Traveler* travelers, int num_travelers, const Grap
     }
 }
 
-/* ------------------ PARENT RECEIVER LOGIC ------------------ */
+
 
 void update_all_travelers_from_pipes(Traveler* travelers, int num_travelers) {
     for (int i = 0; i < num_travelers; i++) {
@@ -154,10 +152,10 @@ void update_all_travelers_from_pipes(Traveler* travelers, int num_travelers) {
             travelers[i].current_node = msg.arrived_node;
             travelers[i].next_node = msg.next_node;
             
-            /* 💡 Receive state update from pipe and store it for GUI rendering (colors & offsets) */
+
             travelers[i].state = msg.state;
 
-            /* If child declares finished, close read end and deactivate traveler */
+
             if (msg.state == FINISHED) {
                 travelers[i].is_active = 0;
                 close(travelers[i].pipe_fd[0]);
@@ -166,15 +164,14 @@ void update_all_travelers_from_pipes(Traveler* travelers, int num_travelers) {
     }
 }
 
-/* ------------------ ANIMATION COORDINATES LOGIC ------------------ */
+
 
 void update_traveler_animation(Traveler* traveler, const GraphData* data) {
     if (!traveler || !traveler->is_active) return;
 
-    /* This function can be used to implement interpolation/jumps logic */
+
 }
 
-/* ------------------ CLEANUP & WAIT LOGIC ------------------ */
 
 void wait_for_all_children(Traveler* travelers, int num_travelers) {
     for (int i = 0; i < num_travelers; i++) {
