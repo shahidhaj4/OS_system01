@@ -36,7 +36,7 @@ make milestone5
 ### Milestone 6 (Synchronization)
 make milestone6
 
-./sim graph.txt
+./sim graph.txt6
 
 ## 🧹 Clean Build Files
 make clean
