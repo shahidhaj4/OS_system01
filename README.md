@@ -48,7 +48,7 @@ make clean
 ### Milestones 1–3 Format
 
 Example:
-
+```
 0 3  
 4 5  
 0 1 10  
@@ -56,7 +56,7 @@ Example:
 2 3 7  
 0 2 15  
 1 3 12
-
+```
 - First line: source and destination
 - Second line: number of nodes (N) and edges (M)
 - Next lines: edges (src dst weight)
@@ -66,7 +66,7 @@ Example:
 ### Milestones 4–5 Format
 
 Example:
-
+```
 5 7  
 0 1 4  
 0 2 2  
@@ -78,6 +78,7 @@ Example:
 2  
 0 4  
 2 3
+```
 ### Milestones 6 Format
 Example:
 ```
