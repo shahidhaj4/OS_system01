@@ -18,6 +18,8 @@ add_executable(sim
         sync.h
         scheduler.c
         scheduler.h
+        queue.c
+        queue.h
 )
 
 target_compile_definitions(sim PRIVATE MILESTONE=6)
