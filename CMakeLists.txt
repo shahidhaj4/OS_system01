@@ -16,6 +16,8 @@ add_executable(sim
         Dijkstra_draw.c
         sync.c
         sync.h
+        scheduler.c
+        scheduler.h
 )
 
 target_compile_definitions(sim PRIVATE MILESTONE=6)
