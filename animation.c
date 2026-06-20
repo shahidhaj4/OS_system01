@@ -65,11 +65,16 @@ static void run_autonomous_child(
         msg.next_node = (i == path_len - 1) ? -1 : path[i + 1];
         msg.is_finished = (i == path_len - 1) ? 1 : 0;
 
+        /* Weight of the edge AFTER this node — needed by SJF scheduling */
+        int next_weight = (i == path_len - 1)
+                            ? 0
+                            : get_edge_weight_from_data(data, path[i], path[i + 1]);
+
         /* 🟡 1. [State: WAITING] - Inform parent about waiting outside the node before locking */
         msg.state = WAITING;
         write(write_fd, &msg, sizeof(msg));
 
-        lock_node(path[i]);
+        lock_node(path[i], traveler_idx, next_weight);
 
         /* 🟢 2. [State: INSIDE_NODE] - Successfully acquired lock and entered node, update state */
         msg.state = INSIDE_NODE;
@@ -78,7 +83,7 @@ static void run_autonomous_child(
         /* Mandatory 1-second stay inside the node (critical section) */
         sleep(1);
 
-        unlock_node(path[i]);
+        unlock_node(path[i], traveler_idx);
 
         /* If this is the destination node, declare finished and break loop */
         if (i == path_len - 1) {

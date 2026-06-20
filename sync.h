@@ -2,20 +2,20 @@
 #define SYNC_H
 
 #include <pthread.h>
+#include "scheduler.h"   /* brings in ScheduleType + queue.h (NodeQueue) */
 
 #ifndef MAX_NODES
 #define MAX_NODES 100
 #endif
 
-/* Pointer to the mutex array in shared memory */
-extern pthread_mutex_t *node_mutexes;
 
-/* Functions to initialize and clean up locks */
+extern ScheduleType g_schedule_type;
+extern pthread_mutex_t *node_mutexes;
+extern pthread_cond_t  *node_conds;
+extern NodeQueue        *node_queues;
 void init_node_locks(int node_count);
 void destroy_node_locks(int node_count);
+void lock_node(int node, int traveler_id, int next_edge_weight);
+void unlock_node(int node, int traveler_id);
 
-/* Functions to lock and unlock specific nodes */
-void lock_node(int node);
-void unlock_node(int node);
-
-#endif // SYNC_H
+#endif /* SYNC_H */
