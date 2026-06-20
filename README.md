@@ -29,6 +29,7 @@ make milestone4
 ./sim graph.txt
 
 ### Milestone 5 (IPC)
+
 make milestone5
 
 ./sim graph.txt
@@ -37,6 +38,11 @@ make milestone5
 make milestone6
 
 ./sim graph.txt6
+
+=======
+make milestone5  
+./sim graph.txt
+
 
 ## 🧹 Clean Build Files
 make clean
@@ -136,6 +142,7 @@ Example:
 - Terminal logs are printed only by the parent process.
 - The chosen IPC method is pipes.
 
+
 ### Milestone 6
 - Node synchronization between multiple traveler processes.
 - Each graph node has its own shared lock.
@@ -148,6 +155,7 @@ Example:
     - MOVING: traveler is moving between nodes.
     - FINISHED: traveler reached the destination.
 - Synchronization is implemented using shared process mutexes.
+
 
 ## 🔗 IPC Choice - Milestone 5
 
@@ -170,6 +178,7 @@ Example log format:
 [PID=1021] arrived at node 4 | DESTINATION  
 [PID=1021] finished
 
+
 ## 🔒 Synchronization Choice - Milestone 6
 
 For Milestone 6, we used process-shared mutexes for node synchronization.
@@ -185,6 +194,8 @@ When a traveler reaches a node:
 5. The child unlocks the node and continues moving.
 
 This guarantees that no more than one traveler can be inside the same node at the same time.
+=======
+
 ## 👥 Task Distribution
 
 ### Milestone 1 & 2
@@ -260,6 +271,7 @@ Updated input reading for multiple travelers and provided Dijkstra path extracti
 **Files:** `drawing.c`, `drawing.h`, `graph.txt`  
 Displayed travelers with different colors, drew the graph, and prepared the test input file for Milestone 5.
 
+<<<<<<< Updated upstream
 ### Milestone 6
 
 #### Ghadabader – Synchronization and Node Locks
@@ -281,6 +293,8 @@ Waiting travelers are shown outside the node with a `WAIT` label and are slightl
 **Files:** `Main.c`, `Makefile`, `README.md`, `graph.txt`  
 Connected the synchronization, IPC updates, traveler states, and GUI drawing into the main simulation flow.  
 Updated the build commands for `make milestone6`, prepared the test input file, and documented the Milestone 6 synchronization mechanism in the README.
+=======
+
 ## 📝 Notes
 - Uses adjacency list.
 - Memory handled properly.
@@ -292,6 +306,7 @@ Updated the build commands for `make milestone6`, prepared the test input file, 
 - Child processes send node updates to the parent process through pipes.
 - Only the parent process prints terminal logs.
 - The parent process updates the GUI according to the messages received from the children.
+
 - Travelers move simultaneously and are displayed with different colors.
 - Milestone 6 uses shared mutex locks for node synchronization.
 - Each node has one process-shared mutex.
@@ -299,3 +314,6 @@ Updated the build commands for `make milestone6`, prepared the test input file, 
 - The parent initializes the node locks before creating child processes.
 - Child processes call `lock_node()` before entering a node and `unlock_node()` after staying inside for one second.
 - The GUI displays waiting travelers outside the node and shows which traveler is inside.
+=======
+- Travelers move simultaneously and are displayed with different colors.
+
