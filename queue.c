@@ -1,83 +1,39 @@
 #include "queue.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 void init_node_queue(NodeQueue* q) {
     if (q == NULL) return;
-    q->front = NULL;
-    q->rear = NULL;
-    q->size = 0;
+    q->count = 0;
 }
 
-void enqueue_traveler(NodeQueue* q, int traveler_id, int order, int next_edge_weight, int waiting_state) {
-    if (q == NULL) return;
+int enqueue_traveler(NodeQueue* q, int traveler_id, int order, int next_edge_weight, int waiting_state) {
+    if (q == NULL) return 0;
 
-    QueueNode* newNode = (QueueNode*)malloc(sizeof(QueueNode));
-    if (newNode == NULL) {
-        perror("Memory allocation failed");
-        return;
+    if (q->count >= MAX_WAITING_TRAVELERS) {
+        return 0;
     }
 
-    newNode->traveler_id = traveler_id;
-    newNode->order = order;
-    newNode->next_edge_weight = next_edge_weight;
-    newNode->waiting_state = waiting_state;
-    newNode->next = NULL;
+    q->travelers[q->count].traveler_id = traveler_id;
+    q->travelers[q->count].order = order;
+    q->travelers[q->count].next_edge_weight = next_edge_weight;
+    q->travelers[q->count].waiting_state = waiting_state;
 
-    if (q->rear == NULL) {
-        q->front = newNode;
-        q->rear = newNode;
-    } else {
-        q->rear->next = newNode;
-        q->rear = newNode;
-    }
-    q->size++;
-}
-
-int remove_traveler(NodeQueue* q, int traveler_id) {
-    if (q == NULL || q->front == NULL) return 0;
-
-    QueueNode* temp = q->front;
-    QueueNode* prev = NULL;
-
-    while (temp != NULL && temp->traveler_id != traveler_id) {
-        prev = temp;
-        temp = temp->next;
-    }
-
-    if (temp == NULL) return 0;
-
-    if (prev == NULL) {
-        q->front = temp->next;
-    } else {
-        prev->next = temp->next;
-    }
-
-    if (temp == q->rear) {
-        q->rear = prev;
-    }
-
-    free(temp);
-    q->size--;
+    q->count++;
     return 1;
 }
 
-QueueNode* get_node_queue(NodeQueue* q) {
-    if (q == NULL) return NULL;
-    return q->front;
-}
+int remove_traveler(NodeQueue* q, int traveler_id) {
+    if (q == NULL || q->count == 0) return 0;
 
-void free_node_queue(NodeQueue* q) {
-    if (q == NULL) return;
-    QueueNode* current = q->front;
-    QueueNode* nextNode;
+    for (int i = 0; i < q->count; i++) {
+        if (q->travelers[i].traveler_id == traveler_id) {
+            for (int j = i; j < q->count - 1; j++) {
+                q->travelers[j] = q->travelers[j + 1];
+            }
 
-    while (current != NULL) {
-        nextNode = current->next;
-        free(current);
-        current = nextNode;
+            q->count--;
+            return 1;
+        }
     }
-    q->front = NULL;
-    q->rear = NULL;
-    q->size = 0;
+
+    return 0;
 }

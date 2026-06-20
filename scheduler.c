@@ -1,27 +1,26 @@
 #include "scheduler.h"
 #include <stdio.h>
+
+
 int get_next_traveler(NodeQueue* queue, ScheduleType sched_type) {
-    if (queue == NULL || queue->front == NULL || queue->size == 0) {
+    if (queue == NULL || queue->count == 0) {
         return -1;
     }
 
-    QueueNode* current = queue->front;
-    QueueNode* selected = queue->front;
+    int selected_index = 0;
 
-    while (current != NULL) {
+    for (int i = 1; i < queue->count; i++) {
         if (sched_type == SCHED_FCFS) {
-            if (current->order < selected->order) {
-                selected = current;
+            if (queue->travelers[i].order < queue->travelers[selected_index].order) {
+                selected_index = i;
             }
         }
         else if (sched_type == SCHED_SJF) {
-            if (current->next_edge_weight < selected->next_edge_weight) {
-                selected = current;
+            if (queue->travelers[i].next_edge_weight < queue->travelers[selected_index].next_edge_weight) {
+                selected_index = i;
             }
         }
-
-        current = current->next;
     }
 
-    return selected->traveler_id;
+    return queue->travelers[selected_index].traveler_id;
 }

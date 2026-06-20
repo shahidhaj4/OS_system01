@@ -10,4 +10,4 @@ typedef enum {
 
 int get_next_traveler(NodeQueue* queue, ScheduleType sched_type);
 
-#endif /* SCHEDULER_H */
+#endif
