@@ -1,5 +1,5 @@
 #include "queue.h"
-
+#include <stddef.h>
 void init_node_queue(NodeQueue* q) {
     if (q == NULL) return;
     q->count = 0;

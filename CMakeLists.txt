@@ -8,7 +8,6 @@ add_compile_definitions(_POSIX_C_SOURCE=200809L)
 add_compile_definitions(_DEFAULT_SOURCE)
 
 add_executable(sim
-        sim_main.c
         file_reader.c
         dijkstra.c
         graph.c
