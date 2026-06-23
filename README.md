@@ -47,8 +47,8 @@ make milestone6
 ### Milestone 7 (Scheduling)
 ```bash
 make milestone7
-./sim -schd fcfs graph.txt
-./sim -schd sjf graph.txt
+./sim -schd fcfs graph.txt7
+./sim -schd sjf graph.txt7
 ```
 
 ---
