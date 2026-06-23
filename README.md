@@ -344,7 +344,7 @@ Updated input reading for multiple travelers and provided Dijkstra path extracti
 
 Displayed travelers with different colors, drew the graph, and prepared the test input file for Milestone 5.
 
----
+
 
 ### Milestone 6
 
