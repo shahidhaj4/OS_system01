@@ -204,7 +204,7 @@ Example:
 ---
 
 ## ⏱ Scheduling Comparison - Milestone 7
-
+.
 In FCFS, travelers enter the node according to the order in which they arrived.
 This makes the behavior simple and fair by arrival time, but a traveler with a long next edge may delay others.
 
