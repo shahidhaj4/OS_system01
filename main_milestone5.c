@@ -53,6 +53,7 @@ typedef struct {
 
     pid_t child_pid;
     int pipe_fd[2];
+    int ack_fd[2];
 } M5Traveler;
 
 static Graph* build_graph_from_data(const GraphData* data) {
@@ -114,7 +115,7 @@ static void send_pipe_message(int fd,
     write(fd, &msg, sizeof(msg));
 }
 
-static void child_process_run(int traveler_index, Graph* g, int src, int dst, int write_fd) {
+static void child_process_run(int traveler_index, Graph* g, int src, int dst, int write_fd, int ack_read_fd) {
     int path[MAX_NODES];
     int path_len = 0;
     int total_weight = 0;
@@ -131,10 +132,13 @@ static void child_process_run(int traveler_index, Graph* g, int src, int dst, in
 
         if (next < 0) {
             send_pipe_message(write_fd, traveler_index, current, -1, 1, FINISHED);
+
             break;
         }
 
         send_pipe_message(write_fd, traveler_index, current, next, 0, MOVING);
+        char ack;
+        read(ack_read_fd, &ack, sizeof(ack));
 
         long total_nsec = edge_weight(g, current, next) * 300000000L;
 
@@ -146,6 +150,7 @@ static void child_process_run(int traveler_index, Graph* g, int src, int dst, in
     }
 
     close(write_fd);
+    close(ack_read_fd);
     _exit(0);
 }
 
@@ -163,6 +168,8 @@ static void init_traveler(M5Traveler* t, int src, int dst) {
     t->child_pid = -1;
     t->pipe_fd[0] = -1;
     t->pipe_fd[1] = -1;
+    t->ack_fd[0] = -1;
+    t->ack_fd[1] = -1;
 }
 
 static void spawn_ipc_child(Graph* g, M5Traveler* t, int index) {
@@ -170,7 +177,10 @@ static void spawn_ipc_child(Graph* g, M5Traveler* t, int index) {
         perror("pipe");
         exit(1);
     }
-
+    if (pipe(t->ack_fd) < 0) {
+        perror("pipe ack");
+        exit(1);
+    }
     int flags = fcntl(t->pipe_fd[0], F_GETFL, 0);
     fcntl(t->pipe_fd[0], F_SETFL, flags | O_NONBLOCK);
 
@@ -182,12 +192,15 @@ static void spawn_ipc_child(Graph* g, M5Traveler* t, int index) {
     }
 
     if (pid == 0) {
+        close(t->ack_fd[1]);
         close(t->pipe_fd[0]);
-        child_process_run(index, g, t->src, t->dst, t->pipe_fd[1]);
+        child_process_run(index, g, t->src, t->dst, t->pipe_fd[1], t->ack_fd[0]);
     }
 
     close(t->pipe_fd[1]);
     t->pipe_fd[1] = -1;
+    close(t->ack_fd[0]);
+    t->ack_fd[0] = -1;
     t->child_pid = pid;
 }
 
@@ -244,11 +257,15 @@ static void receive_pipe_updates(M5Traveler* travelers, int traveler_count) {
                 t->finished = msg.is_finished;
 
                 log_pipe_message(&msg);
-
+                if (!msg.is_finished && t->ack_fd[1] >= 0) {
+                    char ack = 1;
+                    write(t->ack_fd[1], &ack, sizeof(ack));
+                }
                 if (msg.is_finished) {
                     close(t->pipe_fd[0]);
                     t->pipe_fd[0] = -1;
-
+                    close(t->ack_fd[1]);
+                    t->ack_fd[1] = -1;
                     waitpid(t->child_pid, NULL, 0);
                     t->child_pid = 0;
                 }
