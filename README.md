@@ -199,7 +199,8 @@ Example:
 - The GUI clearly displays which scheduling algorithm is currently running
 - FCFS gives access according to arrival order
 - SJF gives access to the traveler with the shortest next edge weight
-
+###EXAM shahid(214073900)
+- הוספנו הדפסות (logs) לקובץ scheduler.c. בכל פעם שהמתזמן מקבל החלטה, התוכנית מדפיסה מי הנוסעים שממתינים בתור, איזה נוסע נבחר, ולפי איזה אלגוריתם הוא נבחר (FCFS או SJF). לא שינינו את האלגוריתם עצמו, אלא רק הוספנו הדפסות כדי שיהיה אפשר לעקוב אחרי החלטות התזמון בזמן הריצה.
 ---
 
 ## ⏱ Scheduling Comparison - Milestone 7
